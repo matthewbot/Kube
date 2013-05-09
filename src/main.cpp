@@ -29,8 +29,14 @@ int main(int argc, char **argv) {
     Shader frag{Shader::Type::FRAGMENT, "frag.glsl"};
     ShaderProgram prgm{vert, frag};
 
-    Chunk chunk;
-    chunk.fill(Block::STONE);
+    BlockType stone;
+    stone.setAllFaceTextureNums(0);
+
+    BlockType grass;
+    grass.setAllFaceTextureNums(3);
+    grass.setFaceTextureNum(Face::TOP, 2);
+
+    Chunk chunk = Chunk::genRandom({Block(stone), Block(grass)}, .2);
     Mesh chunk_mesh = chunk.tesselate();
 
     PerspectiveProjection projection;
@@ -56,7 +62,7 @@ int main(int argc, char **argv) {
 
             auto pick_result = chunk.pick(ray.first, ray.second, 30);
             if (pick_result) {
-                chunk(pick_result->first) = Block::AIR;
+                chunk(pick_result->first) = Block::air();
                 chunk_mesh = chunk.tesselate();
             }
         }

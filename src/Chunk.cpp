@@ -6,44 +6,49 @@
 #include <cassert>
 #include <glm/glm.hpp>
 
-Chunk Chunk::genRandom() {
+Chunk Chunk::genRandom(const std::vector<Block> &blocks,
+                       float density) {
     static std::default_random_engine generator;
-    std::uniform_int_distribution<int> distribution(0,20);
+    std::uniform_real_distribution<float> choose_air{0, 1};
+    std::uniform_int_distribution<int> choose_block{0, static_cast<int>(blocks.size()-1)};
 
     Chunk chunk;
-    for (Block &b : chunk) {
-        b = distribution(generator) ? Block::AIR : Block::STONE;
+    for (auto &block : chunk) {
+        if (choose_air(generator) < density)
+            block = blocks[choose_block(generator)];
+        else
+            block = Block::air();
     }
 
     return chunk;
 }
 
-void Chunk::fill(Block block) {
-    for (Block &b : *this) {
+void Chunk::fill(const Block &block) {
+    for (auto &b : *this) {
         b = block;
     }
 }
 
 Mesh Chunk::tesselate() const {
-    MeshBuilder builder{MeshFormat{3, 3, 2}};
+    MeshBuilder builder{MeshFormat{3, 3, 3}};
 
     for (auto i = begin(*this); i != end(*this); ++i) {
-        if (*i == Block::AIR)
+        if (i->isAir())
             continue;
 
         for (Face f : {Face::RIGHT, Face::LEFT,
                        Face::TOP, Face::BOTTOM,
                        Face::FRONT, Face::BACK}) {
-            tesselate_face(builder, i.getPos(), f);
+            tesselate_face(builder, i.getPos(), f, (*i)->getFaceTextureNum(f));
         }
     }
 
     return Mesh{builder};
 }
 
-void Chunk::tesselate_face(MeshBuilder &builder, const Pos &pos, Face f) const {
+void Chunk::tesselate_face(MeshBuilder &builder, const Pos &pos, Face f, unsigned int texnum) const {
     Pos adj = pos.adjacent(f);
-    if (adj.isValid() && (*this)(adj) == Block::STONE)
+    if (adj.isValid() && !(*this)(adj).isAir())
         return;
 
     const glm::vec3 bfl{pos.getX(),
@@ -57,16 +62,16 @@ void Chunk::tesselate_face(MeshBuilder &builder, const Pos &pos, Face f) const {
     const glm::vec3 tbl = bfl + glm::vec3{0, 1, 1};
     const glm::vec3 tbr = bfl + glm::vec3{1, 1, 1};
 
-    const glm::vec2 tex_bl{0, 0};
-    const glm::vec2 tex_br{1, 0};
-    const glm::vec2 tex_tl{0, 1};
-    const glm::vec2 tex_tr{1, 1};
+    const glm::vec3 tex_bl{0, 1, texnum};
+    const glm::vec3 tex_br{1, 1, texnum};
+    const glm::vec3 tex_tl{0, 0, texnum};
+    const glm::vec3 tex_tr{1, 0, texnum};
 
     glm::vec3 normal;
 
     using Idx = MeshBuilder::Index;
 
-    auto vert = [&](const glm::vec3 &pos, const glm::vec2 &tex) -> Idx {
+    auto vert = [&](const glm::vec3 &pos, const glm::vec3 &tex) -> Idx {
         builder.beginVert();
         builder.append(pos);
         builder.append(normal);
@@ -152,7 +157,7 @@ boost::optional<std::pair<Chunk::Pos, Face>> Chunk::pick(const glm::vec3 &startp
 
         if (!pos.isValid()) {
             return {};
-        } else if ((*this)(pos) != Block::AIR) {
+        } else if (!(*this)(pos).isAir()) {
             auto face = pos.sharedFace(prev_pos);
 
             return std::make_pair(pos, get_optional_value_or(face, Face::BOTTOM));

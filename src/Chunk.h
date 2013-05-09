@@ -2,6 +2,7 @@
 #define CHUNK_H
 
 #include "Mesh.h"
+#include "Block.h"
 
 #include <boost/optional.hpp>
 
@@ -10,10 +11,6 @@
 #include <vector>
 #include <ostream>
 
-enum class Block : uint16_t { AIR, STONE };
-
-enum class Face : uint8_t { RIGHT, LEFT, BACK, FRONT, TOP, BOTTOM};
-
 class Chunk {
 public:
     static constexpr int XSize = 32;
@@ -21,8 +18,9 @@ public:
     static constexpr int ZSize = 32;
 
     Chunk() { }
-    explicit Chunk(Block block) { fill(block); }
-    static Chunk genRandom();
+    explicit Chunk(const Block &block) { fill(block); }
+    static Chunk genRandom(const std::vector<Block> &blocks,
+                           float density);
 
     class Pos;
 
@@ -30,11 +28,11 @@ public:
         return data[p.getOffset()];
     }
 
-    Block operator()(const Pos &p) const {
+    const Block &operator()(const Pos &p) const {
         return data[p.getOffset()];
     }
 
-    void fill(Block block);
+    void fill(const Block &block);
     Mesh tesselate() const;
 
     boost::optional<std::pair<Pos, Face>> pick(const glm::vec3 &startpos,
@@ -81,8 +79,10 @@ public:
     public:
         iterator &operator++() { pos = pos.next(); return *this; }
         Block &operator*() const { return (*chunk)(pos); }
-        inline bool operator==(const iterator &i) const { return pos == i.pos; }
-        inline bool operator!=(const iterator &i) const { return pos != i.pos; }
+        Block *operator->() const { return &(*chunk)(pos); }
+
+        bool operator==(const iterator &i) const { return pos == i.pos; }
+        bool operator!=(const iterator &i) const { return pos != i.pos; }
 
         inline const Pos &getPos() const { return pos; }
 
@@ -102,9 +102,9 @@ public:
             chunk(&chunk), pos(pos) { }
 
         const_iterator &operator++() { pos = pos.next(); return *this; }
-        Block operator*() const {
-            return (*chunk)(pos);
-        }
+        const Block &operator*() const { return (*chunk)(pos); }
+        const Block *operator->() const { return &(*chunk)(pos); }
+
         bool operator==(const const_iterator &i) const { return pos == i.getPos(); }
         bool operator!=(const const_iterator &i) const { return pos != i.getPos(); }
 
@@ -118,7 +118,7 @@ public:
 private:
     std::array<Block, XSize*YSize*ZSize> data;
 
-    void tesselate_face(MeshBuilder &builder, const Pos &pos, Face f) const;
+    void tesselate_face(MeshBuilder &builder, const Pos &pos, Face f, unsigned int texnum) const;
 };
 
 inline Chunk::iterator begin(Chunk &chunk) {
