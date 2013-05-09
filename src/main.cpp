@@ -32,11 +32,15 @@ int main(int argc, char **argv) {
     BlockType stone;
     stone.setAllFaceTextureNums(0);
 
+    BlockType dirt;
+    dirt.setAllFaceTextureNums(1);
+
     BlockType grass;
     grass.setAllFaceTextureNums(3);
     grass.setFaceTextureNum(Face::TOP, 2);
+    grass.setFaceTextureNum(Face::BOTTOM, 1);
 
-    Chunk chunk = Chunk::genRandom({Block(stone), Block(grass)}, .2);
+    Chunk chunk = Chunk::genRandom({Block(stone), Block(dirt), Block(grass)}, .2);
     Mesh chunk_mesh = chunk.tesselate();
 
     PerspectiveProjection projection;
