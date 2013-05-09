@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <tuple>
+#include <boost/asio.hpp>
+#include <chrono>
 #include <GL/glew.h>
 #include <GL/glfw.h>
 #include <glm/glm.hpp>
@@ -55,7 +57,15 @@ int main(int argc, char **argv) {
     RPYCameraManipulator camera_manipulator{.002, 2};
     RPYCamera camera;
 
-    while (!window.isClosed()) {
+    static const auto rate = boost::posix_time::seconds(1/60.0);
+    boost::asio::io_service io;
+    boost::asio::deadline_timer timer(io, rate);
+
+    std::function<void (const boost::system::error_code &)> render = [&](const boost::system::error_code &err) -> void {
+        if (window.isClosed()) {
+            io.stop();
+        }
+
         if (camera_manipulator.update(camera, window, 1/50.0)) {
             renderer.setCamera(camera);
         }
@@ -75,8 +85,13 @@ int main(int argc, char **argv) {
         renderer.render(chunk_mesh);
 
         window.swapBuffers();
-        usleep(20000);
-    }
+
+        timer.expires_at(timer.expires_at() + rate);
+        timer.async_wait(render);
+    };
+
+    timer.async_wait(render);
+    io.run();
 
     glfwTerminate();
     return 0;
