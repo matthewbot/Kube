@@ -33,7 +33,7 @@ public:
     bool operator!=(const Block &block) { return !(*this == block); }
 
     bool isAir() const { return type == nullptr; }
-    const BlockType *operator->() const { return type; }
+    const BlockType &getType() const { return *type; }
 
 private:
     const BlockType *type;

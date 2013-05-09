@@ -14,10 +14,11 @@ Chunk Chunk::genRandom(const std::vector<Block> &blocks,
 
     Chunk chunk;
     for (auto &block : chunk) {
-        if (choose_air(generator) < density)
+        if (choose_air(generator) < density) {
             block = blocks[choose_block(generator)];
-        else
+        } else {
             block = Block::air();
+        }
     }
 
     return chunk;
@@ -33,27 +34,30 @@ Mesh Chunk::tesselate() const {
     MeshBuilder builder{MeshFormat{3, 3, 3}};
 
     for (auto i = begin(*this); i != end(*this); ++i) {
-        if (i->isAir())
+        if (i->isAir()) {
             continue;
+        }
 
         for (Face f : {Face::RIGHT, Face::LEFT,
                        Face::TOP, Face::BOTTOM,
                        Face::FRONT, Face::BACK}) {
-            tesselate_face(builder, i.getPos(), f, (*i)->getFaceTextureNum(f));
+            tesselate_face(builder, i.getPos(), f);
         }
     }
 
     return Mesh{builder};
 }
 
-void Chunk::tesselate_face(MeshBuilder &builder, const Pos &pos, Face f, unsigned int texnum) const {
-    Pos adj = pos.adjacent(f);
-    if (adj.isValid() && !(*this)(adj).isAir())
+void Chunk::tesselate_face(MeshBuilder &builder, const Pos &pos, Face face) const {
+    auto adjpos = pos.adjacent(face);
+    if (adjpos.isValid() && !getBlock(adjpos).isAir()) {
         return;
+    }
 
-    const glm::vec3 bfl{pos.getX(),
-                        pos.getY(),
-                        pos.getZ()};
+    auto &block = getBlock(pos);
+    auto &type = block.getType();
+
+    const glm::vec3 bfl = pos;
     const glm::vec3 bfr = bfl + glm::vec3{1, 0, 0};
     const glm::vec3 bbl = bfl + glm::vec3{0, 1, 0};
     const glm::vec3 bbr = bfl + glm::vec3{1, 1, 0};
@@ -62,6 +66,7 @@ void Chunk::tesselate_face(MeshBuilder &builder, const Pos &pos, Face f, unsigne
     const glm::vec3 tbl = bfl + glm::vec3{0, 1, 1};
     const glm::vec3 tbr = bfl + glm::vec3{1, 1, 1};
 
+    const unsigned int texnum = type.getFaceTextureNum(face);
     const glm::vec3 tex_bl{0, 1, texnum};
     const glm::vec3 tex_br{1, 1, texnum};
     const glm::vec3 tex_tl{0, 0, texnum};
@@ -79,9 +84,10 @@ void Chunk::tesselate_face(MeshBuilder &builder, const Pos &pos, Face f, unsigne
         return builder.endVert();
     };
 
-    Idx a, b;
+    Idx a;
+    Idx b;
 
-    switch (f) {
+    switch (face) {
     case Face::RIGHT:
         normal = glm::vec3{1, 0, 0};
         vert(bfr, tex_bl);
@@ -144,9 +150,13 @@ void Chunk::tesselate_face(MeshBuilder &builder, const Pos &pos, Face f, unsigne
     }
 }
 
-boost::optional<std::pair<Chunk::Pos, Face>> Chunk::pick(const glm::vec3 &startpos,
-                                                         const glm::vec3 &dir,
-                                                         float maxdist) {
+boost::optional<Chunk::PickResult> Chunk::pick(const glm::vec3 &startpos,
+                                               const glm::vec3 &dir,
+                                               float maxdist) const {
+    if (Pos{startpos}.isValid() && !getBlock(startpos).isAir()) {
+        return {{startpos, Face::BOTTOM}};
+    }
+
     static constexpr float stepsize = .1;
     Pos prev_pos{0, 0, 0};
 
@@ -156,11 +166,9 @@ boost::optional<std::pair<Chunk::Pos, Face>> Chunk::pick(const glm::vec3 &startp
         Pos pos = startpos + (step * stepsize) * dir;
 
         if (!pos.isValid()) {
-            return {};
-        } else if (!(*this)(pos).isAir()) {
-            auto face = pos.sharedFace(prev_pos);
-
-            return std::make_pair(pos, get_optional_value_or(face, Face::BOTTOM));
+            return boost::none;
+        } else if (!getBlock(pos).isAir()) {
+            return {{pos, *pos.sharedFace(prev_pos)}};
         }
 
         prev_pos = pos;
@@ -195,7 +203,7 @@ boost::optional<Face> Chunk::Pos::sharedFace(const Pos &pos) const {
 
     int zeros = (dx == 0) + (dy == 0) + (dz == 0);
     if (zeros != 2) {
-        return {};
+        return boost::none;
     }
 
     if (dx == -1) {
@@ -212,7 +220,7 @@ boost::optional<Face> Chunk::Pos::sharedFace(const Pos &pos) const {
         return Face::TOP;
     }
 
-    return {};
+    return boost::none;
 }
 
 Chunk::Pos Chunk::Pos::next() const {

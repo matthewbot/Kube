@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
 
             auto pick_result = chunk.pick(ray.first, ray.second, 30);
             if (pick_result) {
-                chunk(pick_result->first) = Block::air();
+                chunk[pick_result->pos] = Block::air();
                 chunk_mesh = chunk.tesselate();
             }
         }

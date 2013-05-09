@@ -22,23 +22,6 @@ public:
     static Chunk genRandom(const std::vector<Block> &blocks,
                            float density);
 
-    class Pos;
-
-    Block &operator()(const Pos &p) {
-        return data[p.getOffset()];
-    }
-
-    const Block &operator()(const Pos &p) const {
-        return data[p.getOffset()];
-    }
-
-    void fill(const Block &block);
-    Mesh tesselate() const;
-
-    boost::optional<std::pair<Pos, Face>> pick(const glm::vec3 &startpos,
-                                               const glm::vec3 &dir,
-                                               float maxdist);
-
     class Pos {
     public:
         Pos() { }
@@ -65,7 +48,7 @@ public:
         int getOffset() const { return z + ZSize*(y + YSize*x); }
         bool isValid() const;
 
-        operator glm::vec3() { return glm::vec3{x, y, z}; }
+        operator glm::vec3() const { return glm::vec3{x, y, z}; }
 
     private:
         int x;
@@ -73,13 +56,29 @@ public:
         int z;
     };
 
+    Block &operator[](const Pos &p) { return getBlock(p); }
+    Block &getBlock(const Pos &p) { return data[p.getOffset()]; }
+    const Block &operator[](const Pos &p) const { return getBlock(p); }
+    const Block &getBlock(const Pos &p) const { return data[p.getOffset()]; }
+
+    void fill(const Block &block);
+    Mesh tesselate() const;
+
+    struct PickResult {
+        Pos pos;
+        Face face;
+    };
+    boost::optional<PickResult> pick(const glm::vec3 &startpos,
+                                     const glm::vec3 &dir,
+                                     float maxdist) const;
+
     class iterator {
         friend iterator begin(Chunk &chunk);
         friend iterator end(Chunk &chunk);
     public:
         iterator &operator++() { pos = pos.next(); return *this; }
-        Block &operator*() const { return (*chunk)(pos); }
-        Block *operator->() const { return &(*chunk)(pos); }
+        Block &operator*() const { return (*chunk)[pos]; }
+        Block *operator->() const { return &(*chunk)[pos]; }
 
         bool operator==(const iterator &i) const { return pos == i.pos; }
         bool operator!=(const iterator &i) const { return pos != i.pos; }
@@ -102,8 +101,8 @@ public:
             chunk(&chunk), pos(pos) { }
 
         const_iterator &operator++() { pos = pos.next(); return *this; }
-        const Block &operator*() const { return (*chunk)(pos); }
-        const Block *operator->() const { return &(*chunk)(pos); }
+        const Block &operator*() const { return (*chunk)[pos]; }
+        const Block *operator->() const { return &(*chunk)[pos]; }
 
         bool operator==(const const_iterator &i) const { return pos == i.getPos(); }
         bool operator!=(const const_iterator &i) const { return pos != i.getPos(); }
@@ -118,7 +117,7 @@ public:
 private:
     std::array<Block, XSize*YSize*ZSize> data;
 
-    void tesselate_face(MeshBuilder &builder, const Pos &pos, Face f, unsigned int texnum) const;
+    void tesselate_face(MeshBuilder &builder, const Pos &pos, Face f) const;
 };
 
 inline Chunk::iterator begin(Chunk &chunk) {
