@@ -48,16 +48,16 @@ Mesh Chunk::tesselate() const {
     return Mesh{builder};
 }
 
-void Chunk::tesselate_face(MeshBuilder &builder, const Pos &pos, Face face) const {
-    auto adjpos = pos.adjacent(face);
-    if (adjpos.isValid() && !getBlock(adjpos).isAir()) {
+void Chunk::tesselate_face(MeshBuilder &builder, const glm::ivec3 &pos, Face face) const {
+    auto adjpos = adjacentPos(pos, face);
+    if (isValid(adjpos) && !getBlock(adjpos).isAir()) {
         return;
     }
 
     auto &block = getBlock(pos);
     auto &type = block.getType();
 
-    const glm::vec3 bfl = pos;
+    const glm::vec3 bfl{pos};
     const glm::vec3 bfr = bfl + glm::vec3{1, 0, 0};
     const glm::vec3 bbl = bfl + glm::vec3{0, 1, 0};
     const glm::vec3 bbr = bfl + glm::vec3{1, 1, 0};
@@ -150,25 +150,27 @@ void Chunk::tesselate_face(MeshBuilder &builder, const Pos &pos, Face face) cons
     }
 }
 
-boost::optional<Chunk::PickResult> Chunk::pick(const glm::vec3 &startpos,
+boost::optional<Chunk::PickResult> Chunk::pick(const glm::vec3 &startvec,
                                                const glm::vec3 &dir,
                                                float maxdist) const {
-    if (Pos{startpos}.isValid() && !getBlock(startpos).isAir()) {
-        return {{startpos, Face::BOTTOM}};
+    glm::ivec3 startpos{startpos};
+
+    if (isValid(startpos) && !getBlock(startpos).isAir()) {
+        return PickResult{startpos, Face::BOTTOM};
     }
 
     static constexpr float stepsize = .1;
-    Pos prev_pos{0, 0, 0};
+    glm::ivec3 prev_pos{0, 0, 0};
 
     for (unsigned int step = 0;
          step < static_cast<unsigned int>(maxdist / stepsize);
          step++) {
-        Pos pos = startpos + (step * stepsize) * dir;
+        glm::ivec3 pos{startvec + (step * stepsize) * dir};
 
-        if (!pos.isValid()) {
-            return boost::none;
+        if (!isValid(pos)) {
+            return {};
         } else if (!getBlock(pos).isAir()) {
-            return {{pos, *pos.sharedFace(prev_pos)}};
+            return PickResult{pos, *sharedFace(pos, prev_pos)};
         }
 
         prev_pos = pos;
@@ -177,67 +179,12 @@ boost::optional<Chunk::PickResult> Chunk::pick(const glm::vec3 &startpos,
     return {};
 }
 
-Chunk::Pos Chunk::Pos::adjacent(Face f) const {
-    switch (f) {
-    case Face::RIGHT:
-        return {x+1, y, z};
-    case Face::LEFT:
-        return {x-1, y, z};
-    case Face::BACK:
-        return {x, y+1, z};
-    case Face::FRONT:
-        return {x, y-1, z};
-    case Face::TOP:
-        return {x, y, z+1};
-    case Face::BOTTOM:
-        return {x, y, z-1};
-    default:
-        return {x, y, z};
-    }
-}
-
-boost::optional<Face> Chunk::Pos::sharedFace(const Pos &pos) const {
-    int dx = x - pos.getX();
-    int dy = y - pos.getY();
-    int dz = z - pos.getZ();
-
-    int zeros = (dx == 0) + (dy == 0) + (dz == 0);
-    if (zeros != 2) {
-        return boost::none;
-    }
-
-    if (dx == -1) {
-        return Face::LEFT;
-    } else if (dx == 1) {
-        return Face::RIGHT;
-    } else if (dy == -1) {
-        return Face::BACK;
-    } else if (dy == 1) {
-        return Face::FRONT;
-    } else if (dz == -1) {
-        return Face::BOTTOM;
-    } else if (dz == 1) {
-        return Face::TOP;
-    }
-
-    return boost::none;
-}
-
-Chunk::Pos Chunk::Pos::next() const {
-    if (x+1 < XSize) {
-        return {x+1, y, z};
-    } else if (y+1 < YSize) {
-        return {0, y+1, z};
+glm::ivec3 Chunk::nextPos(const glm::ivec3 &pos) {
+    if (pos.x+1 < XSize) {
+        return glm::ivec3{pos.x+1, pos.y, pos.z};
+    } else if (pos.y+1 < YSize) {
+        return glm::ivec3{0, pos.y+1, pos.z};
     } else {
-        return {0, 0, z+1};
+        return glm::ivec3{0, 0, pos.z+1};
     }
-}
-
-bool Chunk::Pos::isValid() const {
-    return x >= 0 && x < XSize && y >= 0 && y < YSize && z >= 0 && z < ZSize;
-}
-
-std::ostream &operator<<(std::ostream &os, const Chunk::Pos &pos) {
-    os << "[" << pos.getX() << ", " << pos.getY() << ", " << pos.getZ() << "]";
-    return os;
 }

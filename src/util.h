@@ -1,6 +1,9 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <glm/glm.hpp>
+
+#include <boost/optional.hpp>
 #include <utility>
 #include <cmath>
 
@@ -50,5 +53,10 @@ private:
 
     T val;
 };
+
+enum class Face { RIGHT, LEFT, BACK, FRONT, TOP, BOTTOM};
+
+boost::optional<Face> sharedFace(const glm::ivec3 &a, const glm::ivec3 &b);
+glm::ivec3 adjacentPos(const glm::ivec3 &pos, Face face);
 
 #endif

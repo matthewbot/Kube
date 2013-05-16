@@ -22,53 +22,29 @@ public:
     static Chunk genRandom(const std::vector<Block> &blocks,
                            float density);
 
-    class Pos {
-    public:
-        Pos() { }
-        Pos(int x, int y, int z) :
-            x(x), y(y), z(z) { }
-        Pos(const glm::vec3 &vec) :
-            x(vec.x), y(vec.y), z(vec.z) { }
+    static int getOffset(const glm::ivec3 &pos) {
+        return pos.z + ZSize*(pos.y + YSize*pos.x);
+    }
+    static bool isValid(const glm::ivec3 &pos) {
+        return pos.x >= 0 && pos.x < XSize &&
+            pos.y >= 0 && pos.y < YSize &&
+            pos.z >= 0 && pos.z < ZSize;
+    }
+    static glm::ivec3 nextPos(const glm::ivec3 &pos);
 
-        bool operator==(const Pos &p) const {
-            return x == p.x && y == p.y && z == p.z;
-        }
-
-        bool operator!=(const Pos &p) const {
-            return !(*this == p);
-        }
-
-        Pos adjacent(Face f) const;
-        boost::optional<Face> sharedFace(const Pos &pos) const;
-        Pos next() const;
-
-        int getX() const { return x; }
-        int getY() const { return y; }
-        int getZ() const { return z; }
-        int getOffset() const { return z + ZSize*(y + YSize*x); }
-        bool isValid() const;
-
-        operator glm::vec3() const { return glm::vec3{x, y, z}; }
-
-    private:
-        int x;
-        int y;
-        int z;
-    };
-
-    Block &operator[](const Pos &p) { return getBlock(p); }
-    Block &getBlock(const Pos &p) { return data[p.getOffset()]; }
-    const Block &operator[](const Pos &p) const { return getBlock(p); }
-    const Block &getBlock(const Pos &p) const { return data[p.getOffset()]; }
+    Block &operator[](const glm::ivec3 &p) { return getBlock(p); }
+    Block &getBlock(const glm::ivec3 &p) { return data[getOffset(p)]; }
+    const Block &operator[](const glm::ivec3 &p) const { return getBlock(p); }
+    const Block &getBlock(const glm::ivec3 &p) const { return data[getOffset(p)]; }
 
     void fill(const Block &block);
     Mesh tesselate() const;
 
     struct PickResult {
-        Pos pos;
+        glm::ivec3 pos;
         Face face;
     };
-    boost::optional<PickResult> pick(const glm::vec3 &startpos,
+    boost::optional<PickResult> pick(const glm::vec3 &startvec,
                                      const glm::vec3 &dir,
                                      float maxdist) const;
 
@@ -76,66 +52,64 @@ public:
         friend iterator begin(Chunk &chunk);
         friend iterator end(Chunk &chunk);
     public:
-        iterator &operator++() { pos = pos.next(); return *this; }
+        iterator &operator++() { pos = nextPos(pos); return *this; }
         Block &operator*() const { return (*chunk)[pos]; }
         Block *operator->() const { return &(*chunk)[pos]; }
 
         bool operator==(const iterator &i) const { return pos == i.pos; }
         bool operator!=(const iterator &i) const { return pos != i.pos; }
 
-        inline const Pos &getPos() const { return pos; }
+        const glm::ivec3 &getPos() const { return pos; }
 
     private:
-        iterator(Chunk &chunk, const Pos &pos) :
+        iterator(Chunk &chunk, const glm::ivec3 &pos) :
             chunk(&chunk), pos(pos) { }
 
         Chunk *chunk;
-        Pos pos;
+        glm::ivec3 pos;
     };
 
     class const_iterator {
         friend const_iterator begin(const Chunk &chunk);
         friend const_iterator end(const Chunk &chunk);
     public:
-        const_iterator(const Chunk &chunk, const Pos &pos) :
+        const_iterator(const Chunk &chunk, const glm::ivec3 &pos) :
             chunk(&chunk), pos(pos) { }
 
-        const_iterator &operator++() { pos = pos.next(); return *this; }
+        const_iterator &operator++() { pos = nextPos(pos); return *this; }
         const Block &operator*() const { return (*chunk)[pos]; }
         const Block *operator->() const { return &(*chunk)[pos]; }
 
-        bool operator==(const const_iterator &i) const { return pos == i.getPos(); }
-        bool operator!=(const const_iterator &i) const { return pos != i.getPos(); }
+        bool operator==(const const_iterator &i) const { return pos == i.pos; }
+        bool operator!=(const const_iterator &i) const { return pos != i.pos; }
 
-        const Pos &getPos() const { return pos; }
+        const glm::ivec3 &getPos() const { return pos; }
 
     private:
         const Chunk *chunk;
-        Pos pos;
+        glm::ivec3 pos;
     };
 
 private:
     std::array<Block, XSize*YSize*ZSize> data;
 
-    void tesselate_face(MeshBuilder &builder, const Pos &pos, Face f) const;
+    void tesselate_face(MeshBuilder &builder, const glm::ivec3 &pos, Face f) const;
 };
 
 inline Chunk::iterator begin(Chunk &chunk) {
-    return {chunk, {0, 0, 0}};
+    return {chunk, glm::ivec3{0, 0, 0}};
 }
 
 inline Chunk::iterator end(Chunk &chunk) {
-    return {chunk, {0, 0, 32}};
+    return {chunk, glm::ivec3{0, 0, 32}};
 }
 
 inline Chunk::const_iterator begin(const Chunk &chunk) {
-    return {chunk, {0, 0, 0}};
+    return {chunk, glm::ivec3{0, 0, 0}};
 }
 
 inline Chunk::const_iterator end(const Chunk &chunk) {
-    return {chunk, {0, 0, 32}};
+    return {chunk, glm::ivec3{0, 0, 32}};
 }
-
-std::ostream &operator<<(std::ostream &os, const Chunk::Pos &pos);
 
 #endif

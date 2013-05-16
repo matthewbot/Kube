@@ -1,9 +1,8 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 
+#include "util.h"
 #include <cstdint>
-
-enum class Face : uint8_t { RIGHT, LEFT, BACK, FRONT, TOP, BOTTOM};
 
 class BlockType {
 public:
