@@ -16,7 +16,7 @@ struct RPYCamera {
     Radians<float> pitch = 0;
     Radians<float> yaw = 0;
 
-    glm::mat4 getModelView() const;
+    glm::mat4 getView() const;
 };
 
 class RPYCameraManipulator {
@@ -56,8 +56,8 @@ public:
     const glm::mat4 &getProjection() const { return projection; }
     void setProjection(const glm::mat4 &projection);
 
-    const glm::mat4 &getModelView() const { return modelview; }
-    void setModelView(const glm::mat4 &modelview);
+    const glm::mat4 &getView() const { return view; }
+    void setView(const glm::mat4 &view);
 
     template <typename T>
     void setProjection(const T &t) {
@@ -66,7 +66,7 @@ public:
 
     template <typename T>
     void setCamera(const T &t) {
-        setModelView(t.getModelView());
+        setView(t.getView());
     }
 
     template <typename Tex>
@@ -76,21 +76,21 @@ public:
         glBindSampler(pos, sampler.getID());
     }
 
-
     void setProgram(ShaderProgram &prgm);
-    void render(const Mesh &mesh);
+    void render(const glm::mat4 &model, const Mesh &mesh);
 
     std::pair<glm::vec3, glm::vec3> unproject(const glm::vec2 &windowpos);
 
 private:
     const Window *window;
     glm::mat4 projection;
-    glm::mat4 modelview;
+    glm::mat4 view;
+    glm::mat4 model;
     ShaderProgram *prgm;
 
     bool prgm_dirty;
 
-    void setup_program();
+    void setup_program(const glm::mat4 &model);
 };
 
 #endif

@@ -3,23 +3,19 @@
 
 #include "util.h"
 #include <cstdint>
+#include "util.h"
 
 class BlockType {
 public:
     BlockType();
 
-    void setFaceTextureNum(Face face, unsigned int texnum) {
-        face_texes[static_cast<int>(face)] = texnum;
-    }
-
+    void setFaceTextureNum(Face face, unsigned int texnum) { face_texes[face] = texnum; }
     void setAllFaceTextureNums(unsigned int texnum);
 
-    unsigned int getFaceTextureNum(Face face) const {
-        return face_texes[static_cast<int>(face)];
-    }
+    unsigned int getFaceTextureNum(Face face) const { return face_texes[face]; }
 
 private:
-    unsigned int face_texes[6];
+    FaceMap<unsigned int> face_texes;
 };
 
 class Block {

@@ -38,9 +38,7 @@ Mesh Chunk::tesselate() const {
             continue;
         }
 
-        for (Face f : {Face::RIGHT, Face::LEFT,
-                       Face::TOP, Face::BOTTOM,
-                       Face::FRONT, Face::BACK}) {
+        for (Face f : all_faces) {
             tesselate_face(builder, i.getPos(), f);
         }
     }
@@ -148,35 +146,6 @@ void Chunk::tesselate_face(MeshBuilder &builder, const glm::ivec3 &pos, Face fac
         builder.repeatVert(b);
         break;
     }
-}
-
-boost::optional<Chunk::PickResult> Chunk::pick(const glm::vec3 &startvec,
-                                               const glm::vec3 &dir,
-                                               float maxdist) const {
-    glm::ivec3 startpos{startpos};
-
-    if (isValid(startpos) && !getBlock(startpos).isAir()) {
-        return PickResult{startpos, Face::BOTTOM};
-    }
-
-    static constexpr float stepsize = .1;
-    glm::ivec3 prev_pos{0, 0, 0};
-
-    for (unsigned int step = 0;
-         step < static_cast<unsigned int>(maxdist / stepsize);
-         step++) {
-        glm::ivec3 pos{startvec + (step * stepsize) * dir};
-
-        if (!isValid(pos)) {
-            return {};
-        } else if (!getBlock(pos).isAir()) {
-            return PickResult{pos, *sharedFace(pos, prev_pos)};
-        }
-
-        prev_pos = pos;
-    }
-
-    return {};
 }
 
 glm::ivec3 Chunk::nextPos(const glm::ivec3 &pos) {

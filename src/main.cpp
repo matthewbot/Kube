@@ -1,6 +1,7 @@
 #include "Shader.h"
 #include "Buffer.h"
 #include "Chunk.h"
+#include "ChunkGrid.h"
 #include "Image.h"
 #include "Texture.h"
 #include "Window.h"
@@ -42,8 +43,17 @@ int main(int argc, char **argv) {
     grass.setFaceTextureNum(Face::TOP, 2);
     grass.setFaceTextureNum(Face::BOTTOM, 1);
 
-    Chunk chunk = Chunk::genRandom({Block(stone), Block(dirt), Block(grass)}, .2);
-    Mesh chunk_mesh = chunk.tesselate();
+    ChunkGrid chunks;
+    for (int x=-2; x<=2; x++) {
+        for (int y=-2; y<=2; y++) {
+            std::unique_ptr<Chunk> chunk{new Chunk{
+                    Chunk::genRandom(
+                        {Block(stone), Block(dirt), Block(grass)},
+                        .2)}};
+
+            chunks.setChunk(glm::ivec3{x, y, 0}, chunk);
+        }
+    }
 
     PerspectiveProjection projection;
     projection.aspect = window.getAspectRatio();
@@ -61,7 +71,8 @@ int main(int argc, char **argv) {
     boost::asio::io_service io;
     boost::asio::deadline_timer timer(io, rate);
 
-    std::function<void (const boost::system::error_code &)> render = [&](const boost::system::error_code &err) -> void {
+    std::function<void (const boost::system::error_code &)> render =
+        [&](const boost::system::error_code &err) -> void {
         if (window.isClosed()) {
             io.stop();
         }
@@ -70,19 +81,13 @@ int main(int argc, char **argv) {
             renderer.setCamera(camera);
         }
 
-        if (window.isKeyPressed('p')) {
-            std::pair<glm::vec3, glm::vec3> ray =
-                renderer.unproject(window.getNDCPos(window.getMousePos()));
-
-            auto pick_result = chunk.pick(ray.first, ray.second, 30);
-            if (pick_result) {
-                chunk[pick_result->pos] = Block::air();
-                chunk_mesh = chunk.tesselate();
-            }
-        }
-
         window.clear();
-        renderer.render(chunk_mesh);
+
+        for (const auto &meshpos : chunks.getMeshPoses()) {
+            glm::mat4 model{1};
+            model = glm::translate(model, glm::vec3{-32*meshpos.first});
+            renderer.render(model, meshpos.second);
+        }
 
         window.swapBuffers();
 
@@ -93,6 +98,5 @@ int main(int argc, char **argv) {
     timer.async_wait(render);
     io.run();
 
-    glfwTerminate();
     return 0;
 }

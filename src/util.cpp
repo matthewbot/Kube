@@ -1,5 +1,9 @@
 #include "util.h"
 
+const std::array<Face, 6> all_faces = {
+    Face::RIGHT, Face::LEFT, Face::BACK, Face::FRONT, Face::TOP, Face::BOTTOM
+};
+
 boost::optional<Face> sharedFace(const glm::ivec3 &a, const glm::ivec3 &b) {
     glm::ivec3 d = a - b;
 

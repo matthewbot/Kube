@@ -25,6 +25,7 @@ public:
     }
 
     unsigned int getID() const { return id; }
+    operator bool() const { return id > 0; }
 
 protected:
     unsigned int id;
@@ -55,8 +56,30 @@ private:
 };
 
 enum class Face { RIGHT, LEFT, BACK, FRONT, TOP, BOTTOM};
+extern const std::array<Face, 6> all_faces;
 
 boost::optional<Face> sharedFace(const glm::ivec3 &a, const glm::ivec3 &b);
 glm::ivec3 adjacentPos(const glm::ivec3 &pos, Face face);
 
+template <typename T>
+class FaceMap {
+public:
+    T &operator[](Face face) { return data[static_cast<int>(face)]; }
+    const T &operator[](Face face) const { return data[static_cast<int>(face)]; };
+
+private:
+    std::array<T, 6> data;
+};
+
+namespace std {
+    template <typename T> struct hash<glm::detail::tvec3<T>> {
+        size_t operator()(const glm::detail::tvec3<T> &vec) const {
+            std::hash<T> hashT;
+            size_t x = hashT(vec.x);
+            size_t y = hashT(vec.y);
+            size_t z = hashT(vec.z);
+            return x + (y<<1) + (z<<2);
+        }
+    };
+}
 #endif

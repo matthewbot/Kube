@@ -40,14 +40,6 @@ public:
     void fill(const Block &block);
     Mesh tesselate() const;
 
-    struct PickResult {
-        glm::ivec3 pos;
-        Face face;
-    };
-    boost::optional<PickResult> pick(const glm::vec3 &startvec,
-                                     const glm::vec3 &dir,
-                                     float maxdist) const;
-
     class iterator {
         friend iterator begin(Chunk &chunk);
         friend iterator end(Chunk &chunk);

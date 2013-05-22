@@ -62,10 +62,13 @@ private:
 
 class Mesh {
 public:
+    Mesh() : verts(0) { }
     explicit Mesh(const MeshBuilder &builder);
 
     unsigned int getVertexCount() const { return verts; }
     const MeshFormat &getFormat() const { return format; }
+
+    operator bool() const { return vao; }
 
     void draw() const;
 

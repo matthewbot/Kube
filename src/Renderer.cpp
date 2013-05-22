@@ -5,13 +5,13 @@
 
 static constexpr float pi = static_cast<float>(M_PI);
 
-glm::mat4 RPYCamera::getModelView() const {
-    glm::mat4 modelview;
-    modelview = glm::rotate(modelview, -90.0f, glm::vec3{1, 0, 0});
-    modelview = glm::rotate(modelview, -pitch/pi*180, glm::vec3{1, 0, 0});
-    modelview = glm::rotate(modelview, -yaw/pi*180, glm::vec3{0, 0, 1});
-    modelview = glm::translate(modelview, glm::vec3(-pos));
-    return modelview;
+glm::mat4 RPYCamera::getView() const {
+    glm::mat4 view;
+    view = glm::rotate(view, -90.0f, glm::vec3{1, 0, 0});
+    view = glm::rotate(view, -pitch/pi*180, glm::vec3{1, 0, 0});
+    view = glm::rotate(view, -yaw/pi*180, glm::vec3{0, 0, 1});
+    view = glm::translate(view, glm::vec3(-pos));
+    return view;
 }
 
 glm::mat4 PerspectiveProjection::getProjection() const {
@@ -68,7 +68,7 @@ bool RPYCameraManipulator::update(RPYCamera &camera, const Window &window, float
 }
 
 Renderer::Renderer() :
-    modelview{1.0},
+    view{1.0},
     prgm(nullptr),
     prgm_dirty(false) { }
 
@@ -77,8 +77,8 @@ void Renderer::setProjection(const glm::mat4 &projection) {
     prgm_dirty = true;
 }
 
-void Renderer::setModelView(const glm::mat4 &modelview) {
-    this->modelview = modelview;
+void Renderer::setView(const glm::mat4 &view) {
+    this->view = view;
     prgm_dirty = true;
 }
 
@@ -87,8 +87,8 @@ void Renderer::setProgram(ShaderProgram &prgm) {
     prgm_dirty = true;
 }
 
-void Renderer::render(const Mesh &mesh) {
-    setup_program();
+void Renderer::render(const glm::mat4 &model, const Mesh &mesh) {
+    setup_program(model);
     mesh.draw();
 }
 
@@ -96,7 +96,7 @@ std::pair<glm::vec3, glm::vec3> Renderer::unproject(const glm::vec2 &window_pos)
     glm::vec4 ndc_pos_near{window_pos, 0, 1};
     glm::vec4 ndc_pos_far{window_pos, 1, 1};
 
-    auto inv_pjmv = glm::inverse(projection * modelview);
+    auto inv_pjmv = glm::inverse(projection * view * model);
     auto world_pos_near = inv_pjmv * ndc_pos_near;
     auto world_pos_far = inv_pjmv * ndc_pos_far;
 
@@ -112,15 +112,17 @@ std::pair<glm::vec3, glm::vec3> Renderer::unproject(const glm::vec2 &window_pos)
                                     vec.z});
 }
 
-void Renderer::setup_program() {
-    if (!prgm_dirty)
-        return;
-
-    glUseProgram(prgm->getID());
+void Renderer::setup_program(const glm::mat4 &model) {
+    if (prgm_dirty) {
+        glUseProgram(prgm->getID());
+    }
+    glm::mat4 modelview = view*model;
     glUniformMatrix4fv(prgm->getUniform("modelview"),
                        1, GL_FALSE, glm::value_ptr(modelview));
-    glUniformMatrix4fv(prgm->getUniform("perspective"),
-                       1, GL_FALSE, glm::value_ptr(projection));
+    if (prgm_dirty) {
+        glUniformMatrix4fv(prgm->getUniform("perspective"),
+                           1, GL_FALSE, glm::value_ptr(projection));
+    }
 
     prgm_dirty = false;
 }
