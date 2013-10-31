@@ -24,7 +24,7 @@ add_definitions(${PNG_DEFINITIONS})
 
 file(GLOB_RECURSE sources src/*.cpp)
 add_executable(test ${sources})
-target_link_libraries(test ${Boost_LIBRARIES} ${GLFW_LIBRARIES} ${GLEW_LIBRARIES} ${PNG_LIBRARIES})
+target_link_libraries(test ${Boost_LIBRARIES} ${GLFW_LIBRARIES} ${GLEW_LIBRARIES} ${PNG_LIBRARIES} GL)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g -gdwarf-3" CACHE STRING "Flags used by the compiler during debug builds" FORCE)
 
