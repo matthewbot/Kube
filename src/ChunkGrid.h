@@ -18,6 +18,14 @@ public:
 
     void setChunk(const glm::ivec3 &pos, std::unique_ptr<Chunk> &chunk);
 
+    const Block *findBlock(glm::ivec3 &pos) const;
+
+    boost::optional<glm::ivec3> pick(const glm::vec3 &pos,
+                                    const glm::vec3 &dir,
+                                    float range) const;
+
+    static std::pair<glm::ivec3, glm::ivec3> posToChunkBlock(const glm::ivec3 &pos);
+
 private:
     struct Entry {
         std::unique_ptr<Chunk> chunk;

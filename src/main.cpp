@@ -124,8 +124,38 @@ int main(int argc, char **argv) {
             renderer.setCamera(camera);
         }
 
-        if (window.isKeyPressed('q')) {
+        if (window.isKeyPressed('r')) {
             chunks = makeGrid(rand());
+        }
+
+        if (window.isKeyPressed('p')) {
+            glm::vec3 pos, dir;
+            std::tie(pos, dir) = renderer.unproject(
+                window.getNDCPos(window.getMousePos()));
+            auto pick = chunks.pick(pos, dir, 10);
+            if (pick) {
+                std::cout << "Picked "
+                          << pick->x << " "
+                          << pick->y << " "
+                          << pick->z << std::endl;
+            } else {
+                std::cout << "No pick" << std::endl;
+            }
+        }
+
+        if (window.isMousePressed(MouseButton::RIGHT)) {
+            glm::vec3 pos, dir;
+            std::tie(pos, dir) = renderer.unproject(
+                window.getNDCPos(window.getMousePos()));
+            auto pick = chunks.pick(pos, dir, 10);
+            if (pick) {
+                glm::ivec3 chunkpos, blockpos;
+                std::tie(chunkpos, blockpos) = ChunkGrid::posToChunkBlock(*pick);
+                std::unique_ptr<Chunk> newchunk{
+                    new Chunk(*chunks.getChunk(chunkpos))};
+                newchunk->getBlock(blockpos) = Block::air();
+                chunks.setChunk(chunkpos, newchunk);
+            }
         }
 
         window.clear();

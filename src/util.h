@@ -82,4 +82,13 @@ namespace std {
         }
     };
 }
+
+template <typename T>
+glm::detail::tvec3<T> floorVec(const glm::detail::tvec3<T> &in) {
+    return glm::detail::tvec3<T>{
+        std::floor(in.x),
+        std::floor(in.y),
+        std::floor(in.z)};
+}
+
 #endif
