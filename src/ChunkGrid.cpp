@@ -2,23 +2,23 @@
 
 ChunkGrid::ChunkGrid() { }
 
-boost::optional<const Chunk &> ChunkGrid::getChunk(const glm::ivec3 &pos) const {
+const Chunk *ChunkGrid::getChunk(const glm::ivec3 &pos) const {
     auto iter = chunks.find(pos);
     if (iter == chunks.end()) {
-        return boost::none;
+        return nullptr;
     } else {
-        return *iter->second.chunk;
+        return iter->second.chunk.get();
     }
 }
 
-boost::optional<const Mesh &> ChunkGrid::getMesh(const glm::ivec3 &pos) const {
+const Mesh *ChunkGrid::getMesh(const glm::ivec3 &pos) const {
     auto iter = chunks.find(pos);
     if (iter == chunks.end()) {
-        return boost::none;
+        return nullptr;
     } else if (!iter->second.mesh) {
-        return boost::none;
+        return nullptr;
     } else {
-        return iter->second.mesh;
+        return &iter->second.mesh;
     }
 }
 
@@ -59,8 +59,8 @@ boost::optional<glm::ivec3> ChunkGrid::pick(const glm::vec3 &startpos,
 
     while (range >= 0) {
         glm::ivec3 ipos = static_cast<glm::ivec3>(floorVec(pos));
-        auto blockptr = findBlock(ipos);
-        if (blockptr != nullptr && !blockptr->isAir()) {
+        auto optblock = findBlock(ipos);
+        if (optblock && !optblock->isAir()) {
             return ipos;
         }
 
