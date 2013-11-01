@@ -2,6 +2,7 @@
 #define CHUNKGRID_H
 
 #include "Chunk.h"
+#include "ChunkGenerator.h"
 
 #include <glm/glm.hpp>
 #include <unordered_map>
@@ -16,8 +17,9 @@ public:
     const Mesh *getMesh(const glm::ivec3 &pos) const;
     std::vector<std::pair<glm::ivec3, const Mesh &>> getMeshPoses() const;
 
-    void setChunk(const glm::ivec3 &pos, std::unique_ptr<Chunk> &chunk);
-
+    void setChunk(const glm::ivec3 &pos, std::unique_ptr<Chunk> &&chunk);
+    void clearAllChunks();
+    
     const Block *findBlock(glm::ivec3 &pos) const;
 
     boost::optional<glm::ivec3> pick(const glm::vec3 &pos,

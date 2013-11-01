@@ -1,7 +1,7 @@
 #include "Shader.h"
 #include "Buffer.h"
 #include "Chunk.h"
-#include "ChunkGrid.h"
+#include "World.h"
 #include "Image.h"
 #include "Texture.h"
 #include "Window.h"
@@ -22,6 +22,83 @@
 
 const float pi = static_cast<float>(M_PI);
 
+struct TestWorldBlocks {
+    BlockType stone;
+    BlockType dirt;
+    BlockType grass;
+
+    TestWorldBlocks() {
+        stone.setAllFaceTextureNums(0);
+
+        dirt.setAllFaceTextureNums(1);
+
+        grass.setAllFaceTextureNums(3);
+        grass.setFaceTextureNum(Face::TOP, 2);
+        grass.setFaceTextureNum(Face::BOTTOM, 1);    
+    }
+};
+
+class TestWorldGenerator : public ChunkGenerator {
+public:
+    TestWorldGenerator() : seed(0) { }
+
+    std::unique_ptr<Chunk> generateChunk(const glm::ivec3 &chunkpos) const {
+        std::unique_ptr<Chunk> chunk{new Chunk{}};
+
+        for (auto i = begin(*chunk); i != end(*chunk); ++i) {
+            glm::vec3 pos = glm::vec3{chunkpos} + glm::vec3{i.getPos()}/32.0f;
+
+            float thresh = 2*pos.z - 1.5;
+            if (thresh < 0) {
+                thresh = 0;
+            }
+
+            float val = perlin3(pos, seed);
+
+            if (val > thresh+.05) {
+                *i = blocks.stone;
+            } else {
+                *i = Block::air();
+            }
+        }
+
+        for (int x=0; x<Chunk::XSize; x++) {
+            for (int y=0; y<Chunk::YSize; y++) {
+                int ctr = 0;
+
+                for (int z=Chunk::ZSize-1; z>=0; z--) {
+                    Block &b = (*chunk)[glm::ivec3{x, y, z}];
+                    if (&b.getType() == &blocks.stone) {
+                        if (ctr == 0) {
+                            b = blocks.grass;
+                        } else {
+                            b = blocks.dirt;
+                        }
+
+                        if (++ctr >= 3) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return chunk;
+    }
+    
+    Border getBorder() const {
+        return NoBorder{1};
+    }
+    
+    void reseed(int seed) { this->seed = seed; }
+
+    const TestWorldBlocks &getBlocks() const { return blocks; }
+    
+private:
+    int seed;
+    TestWorldBlocks blocks;
+};
+
 int main(int argc, char **argv) {
     Window window{800, 600};
 
@@ -34,68 +111,20 @@ int main(int argc, char **argv) {
     Shader frag{Shader::Type::FRAGMENT, "frag.glsl"};
     ShaderProgram prgm{vert, frag};
 
-    BlockType stone;
-    stone.setAllFaceTextureNums(0);
+    std::default_random_engine rand;
+    TestWorldGenerator gen;
+    World world(gen);
 
-    BlockType dirt;
-    dirt.setAllFaceTextureNums(1);
-
-    BlockType grass;
-    grass.setAllFaceTextureNums(3);
-    grass.setFaceTextureNum(Face::TOP, 2);
-    grass.setFaceTextureNum(Face::BOTTOM, 1);
-
-    auto makeGrid = [&](uint32_t seed) {
-        ChunkGrid chunks;
+    auto regenWorld = [&]() {
+        world.getChunks().clearAllChunks();
+        gen.reseed(rand());
         for (int x=-2; x<=2; x++) {
             for (int y=-2; y<=2; y++) {
-                std::unique_ptr<Chunk> chunk{new Chunk{}};
-                for (auto i = begin(*chunk); i != end(*chunk); ++i) {
-                    glm::vec3 pos = glm::vec3{x, y, 0} + glm::vec3{i.getPos()}/32.0f;
-
-                    float thresh = 2*pos.z - 1.5;
-                    if (thresh < 0) {
-                        thresh = 0;
-                    }
-
-                    float val = perlin3(pos, seed);
-
-                    if (val > thresh+.05) {
-                        *i = stone;
-                    } else {
-                        *i = Block::air();
-                    }
-                }
-
-                for (int x=0; x<Chunk::XSize; x++) {
-                    for (int y=0; y<Chunk::YSize; y++) {
-                        int ctr = 0;
-
-                        for (int z=Chunk::ZSize-1; z>=0; z--) {
-                            Block &b = (*chunk)[glm::ivec3{x, y, z}];
-                            if (&b.getType() == &stone) {
-                                if (ctr == 0) {
-                                    b = grass;
-                                } else {
-                                    b = dirt;
-                                }
-
-                                if (++ctr >= 3) {
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                chunks.setChunk(glm::ivec3{x, y, 0}, chunk);
+                world.generateChunk(glm::ivec3{x, y, 0});
             }
         }
-        return chunks;
     };
-
-    std::default_random_engine rand;
-    ChunkGrid chunks = makeGrid(rand());
+    regenWorld();
 
     PerspectiveProjection projection;
     projection.aspect = window.getAspectRatio();
@@ -125,14 +154,14 @@ int main(int argc, char **argv) {
         }
 
         if (window.isKeyPressed('r')) {
-            chunks = makeGrid(rand());
+            regenWorld();
         }
 
         if (window.isKeyPressed('p')) {
             glm::vec3 pos, dir;
             std::tie(pos, dir) = renderer.unproject(
                 window.getNDCPos(window.getMousePos()));
-            auto pick = chunks.pick(pos, dir, 10);
+            auto pick = world.getChunks().pick(pos, dir, 10);
             if (pick) {
                 std::cout << "Picked "
                           << pick->x << " "
@@ -147,20 +176,20 @@ int main(int argc, char **argv) {
             glm::vec3 pos, dir;
             std::tie(pos, dir) = renderer.unproject(
                 window.getNDCPos(window.getMousePos()));
-            auto pick = chunks.pick(pos, dir, 10);
+            auto pick = world.getChunks().pick(pos, dir, 10);
             if (pick) {
                 glm::ivec3 chunkpos, blockpos;
                 std::tie(chunkpos, blockpos) = ChunkGrid::posToChunkBlock(*pick);
                 std::unique_ptr<Chunk> newchunk{
-                    new Chunk(*chunks.getChunk(chunkpos))};
+                    new Chunk(*world.getChunks().getChunk(chunkpos))};
                 newchunk->getBlock(blockpos) = Block::air();
-                chunks.setChunk(chunkpos, newchunk);
+                world.getChunks().setChunk(chunkpos, std::move(newchunk));
             }
         }
 
         window.clear();
 
-        for (const auto &meshpos : chunks.getMeshPoses()) {
+        for (const auto &meshpos : world.getChunks().getMeshPoses()) {
             glm::mat4 model{1};
             model = glm::translate(model, glm::vec3{32*meshpos.first});
             renderer.render(model, meshpos.second);

@@ -34,10 +34,14 @@ std::vector<std::pair<glm::ivec3, const Mesh &>> ChunkGrid::getMeshPoses() const
     return meshposes;
 }
 
-void ChunkGrid::setChunk(const glm::ivec3 &pos, std::unique_ptr<Chunk> &chunk) {
+void ChunkGrid::setChunk(const glm::ivec3 &pos, std::unique_ptr<Chunk> &&chunk) {
     auto &entry = chunks[pos];
     entry.chunk = std::move(chunk);
     entry.mesh = entry.chunk->tesselate();
+}
+
+void ChunkGrid::clearAllChunks() {
+    chunks.clear();
 }
 
 const Block *ChunkGrid::findBlock(glm::ivec3 &pos) const {
