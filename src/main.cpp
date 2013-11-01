@@ -38,7 +38,7 @@ struct TestWorldBlocks {
     }
 };
 
-class TestWorldGenerator : public ChunkGenerator {
+class TestWorldGenerator : public WorldGenerator {
 public:
     TestWorldGenerator() : seed(0) { }
 

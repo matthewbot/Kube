@@ -1,5 +1,5 @@
-#ifndef CHUNKGENERATOR_H
-#define CHUNKGENERATOR_H
+#ifndef WORLDGENERATOR_H
+#define WORLDGENERATOR_H
 
 #include "Chunk.h"
 
@@ -8,9 +8,9 @@
 
 #include <memory>
 
-class ChunkGenerator {
+class WorldGenerator {
 public:
-    virtual ~ChunkGenerator() { }
+    virtual ~WorldGenerator() { }
 
     virtual std::unique_ptr<Chunk> generateChunk(const glm::ivec3 &pos) const=0;
     

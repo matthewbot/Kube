@@ -2,7 +2,6 @@
 #define CHUNKGRID_H
 
 #include "Chunk.h"
-#include "ChunkGenerator.h"
 
 #include <glm/glm.hpp>
 #include <unordered_map>

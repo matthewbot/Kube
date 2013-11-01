@@ -2,11 +2,12 @@
 #define WORLD_H
 
 #include "ChunkGrid.h"
+#include "WorldGenerator.h"
 #include <memory>
 
 class World {
 public:
-    World(const ChunkGenerator &chunkgen);
+    World(const WorldGenerator &chunkgen);
 
     ChunkGrid &getChunks() { return grid; }
     const ChunkGrid &getChunks() const { return grid; }
@@ -15,7 +16,7 @@ public:
     
 private:
     ChunkGrid grid;
-    const ChunkGenerator &chunkgen;
+    const WorldGenerator &chunkgen;
 };
 
 #endif

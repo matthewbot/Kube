@@ -1,6 +1,6 @@
 #include "World.h"
 
-World::World(const ChunkGenerator &chunkgen) :
+World::World(const WorldGenerator &chunkgen) :
     chunkgen(std::move(chunkgen)) { }
 
 struct InBoundsVisitor :public boost::static_visitor<bool> {
@@ -16,7 +16,7 @@ struct InBoundsVisitor :public boost::static_visitor<bool> {
 void World::generateChunk(const glm::ivec3 &pos) {
     if (grid.getChunk(pos))
         return;
-    ChunkGenerator::Border border = chunkgen.getBorder();
+    WorldGenerator::Border border = chunkgen.getBorder();
     if (!boost::apply_visitor(InBoundsVisitor(pos), border))
         return;
     grid.setChunk(pos, chunkgen.generateChunk(pos));
