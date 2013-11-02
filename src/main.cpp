@@ -86,10 +86,6 @@ public:
         return chunk;
     }
     
-    Border getBorder() const {
-        return NoBorder{1};
-    }
-    
     void reseed(int seed) { this->seed = seed; }
 
     const TestWorldBlocks &getBlocks() const { return blocks; }

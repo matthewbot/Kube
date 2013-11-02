@@ -12,7 +12,7 @@ public:
     ChunkGrid &getChunks() { return grid; }
     const ChunkGrid &getChunks() const { return grid; }
 
-    void generateChunk(const glm::ivec3 &pos);
+    bool generateChunk(const glm::ivec3 &pos);
     
 private:
     ChunkGrid grid;
