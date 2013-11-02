@@ -48,14 +48,15 @@ public:
         for (auto i = begin(*chunk); i != end(*chunk); ++i) {
             glm::vec3 pos = glm::vec3{chunkpos} + glm::vec3{i.getPos()}/32.0f;
 
-            float thresh = 2*pos.z - 1.5;
+            float thresh = pos.z;
+            thresh -= 2*perlin3(pos/5.0f, seed ^ 0x1);
             if (thresh < 0) {
                 thresh = 0;
             }
 
             float val = perlin3(pos, seed);
 
-            if (val > thresh+.05) {
+            if (val > thresh) {
                 *i = blocks.stone;
             } else {
                 *i = Block::air();
@@ -183,6 +184,19 @@ int main(int argc, char **argv) {
             }
         }
 
+        static constexpr int range = 8;
+        glm::ivec3 camera_chunkpos = ChunkGrid::posToChunkBlock(
+            glm::ivec3{floorVec(camera.pos)}).first;
+        
+        for (int i=0; i<10; i++) {
+            glm::ivec3 chunkpos = camera_chunkpos;
+            chunkpos.x += (rand() % range) - range/2;
+            chunkpos.y += (rand() % range) - range/2;
+            chunkpos.z = 0;
+            if (world.generateChunk(chunkpos))
+                break;
+        }
+        
         window.clear();
 
         for (const auto &meshpos : world.getChunks().getMeshPoses()) {
