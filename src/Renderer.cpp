@@ -39,14 +39,19 @@ bool RPYCameraManipulator::update(RPYCamera &camera, const Window &window, float
     }
 
     glm::vec3 vel{0, 0, 0};
+
+    float modspeed = speed;
+    if (window.isShiftPressed())
+        modspeed *= 5;
+    
     if (window.isKeyPressed('w'))
-        vel.y = speed;
+        vel.y = modspeed;
     if (window.isKeyPressed('a'))
-        vel.x = -speed;
+        vel.x = -modspeed;
     if (window.isKeyPressed('s'))
-        vel.y = -speed;
+        vel.y = -modspeed;
     if (window.isKeyPressed('d'))
-        vel.x = speed;
+        vel.x = modspeed;
     if (window.isKeyPressed('1'))
         glEnable(GL_FRAMEBUFFER_SRGB);
     if (window.isKeyPressed('2'))
@@ -56,9 +61,9 @@ bool RPYCameraManipulator::update(RPYCamera &camera, const Window &window, float
                     glm::vec4(vel, 0));
 
     if (window.isKeyPressed('e'))
-        vel.z = speed;
+        vel.z = modspeed;
     if (window.isKeyPressed('c'))
-        vel.z = -speed;
+        vel.z = -modspeed;
 
     camera.pos += dt*vel;
     if (vel != glm::vec3{0, 0, 0})
