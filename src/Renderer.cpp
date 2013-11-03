@@ -109,7 +109,7 @@ std::pair<glm::vec3, glm::vec3> Renderer::unproject(const glm::vec2 &window_pos)
     glm::vec4 ndc_pos_near{window_pos, 0, 1};
     glm::vec4 ndc_pos_far{window_pos, 1, 1};
 
-    auto inv_pjmv = glm::inverse(projection * view * model);
+    auto inv_pjmv = glm::inverse(projection * view);
     auto world_pos_near = inv_pjmv * ndc_pos_near;
     auto world_pos_far = inv_pjmv * ndc_pos_far;
 

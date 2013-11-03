@@ -148,6 +148,7 @@ int main(int argc, char **argv) {
 
         camera_manipulator.update(camera, window, 1/50.0); // TODO cleanup
         renderer.setCamera(camera); 
+        renderer.setProjection(projection); // TODO cleanup
 
         if (window.isKeyPressed('r')) {
             regenWorld();
@@ -199,7 +200,6 @@ int main(int argc, char **argv) {
         
         window.clear();
 
-        renderer.setProjection(projection);
         renderer.setProgram(prgm);
         renderer.setTexture(0, tex, sampler);
 
