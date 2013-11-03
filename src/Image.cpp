@@ -1,6 +1,7 @@
 #include "Image.h"
 #include <cstdio>
 #include <png.h>
+#include <algorithm>
 
 std::ostream &operator<<(std::ostream &out, Pixel p) {
     out << "(" << static_cast<int>(p.r) << ", "
@@ -21,6 +22,23 @@ void Image::resize(unsigned int width, unsigned int height) {
     this->width = width;
     this->height = height;
     pixels.resize(width*height);
+}
+
+Image Image::flipped() const {
+    Image ret;
+    ret.width = width;
+    ret.height = height;
+    ret.gamma = gamma;
+    ret.pixels.resize(pixels.size());
+
+    for (unsigned int y = 0; y < height; y++) {
+        auto dest = ret.pixels.begin() + (height-1-y)*width;
+        auto begin = pixels.begin() + y*width;
+        auto end = begin + width;
+        std::copy(begin, end, dest);
+    }
+
+    return ret;
 }
 
 Image Image::loadPNG(const std::string &filename) {

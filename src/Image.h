@@ -41,6 +41,8 @@ public:
     Pixel *getData() { return &pixels.front(); }
     const Pixel *getData() const { return &pixels.front(); }
 
+    Image flipped() const;
+
     class PNGException : public std::runtime_error {
     public:
         using std::runtime_error::runtime_error;

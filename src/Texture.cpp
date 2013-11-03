@@ -19,12 +19,15 @@ void BaseTexture::deleteId() {
 void Texture::setImage(const Image &img) {
     genId();
     bind();
-    glTexImage2D(GL_TEXTURE_2D, 0, img.getGamma() < 1 ? GL_SRGB8_ALPHA8 : GL_RGBA8,
-                 img.getWidth(), img.getHeight(),
-                 0, GL_RGBA, GL_UNSIGNED_BYTE, img.getData());
+
+    Image flipped = img.flipped();
+    glTexImage2D(GL_TEXTURE_2D, 0,
+                 flipped.getGamma() < 1 ? GL_SRGB8_ALPHA8 : GL_RGBA8,
+                 flipped.getWidth(), flipped.getHeight(),
+                 0, GL_RGBA, GL_UNSIGNED_BYTE, flipped.getData());
     glGenerateMipmap(GL_TEXTURE_2D);
-    width = img.getWidth();
-    height = img.getHeight();
+    width = flipped.getWidth();
+    height = flipped.getHeight();
 }
 
 void Texture::bind() const {
@@ -34,12 +37,14 @@ void Texture::bind() const {
 void ArrayTexture::setImage(const Image &img, unsigned int layers) {
     genId();
     bind();
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, img.getGamma() < 1 ? GL_SRGB8_ALPHA8 : GL_RGBA8,
-                 img.getWidth(), img.getHeight()/layers, layers,
-                 0, GL_RGBA, GL_UNSIGNED_BYTE, img.getData());
+
+    Image flipped = img.flipped();
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, flipped.getGamma() < 1 ? GL_SRGB8_ALPHA8 : GL_RGBA8,
+                 flipped.getWidth(), flipped.getHeight()/layers, layers,
+                 0, GL_RGBA, GL_UNSIGNED_BYTE, flipped.getData());
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
-    width = img.getWidth();
-    height = img.getHeight() / layers;
+    width = flipped.getWidth();
+    height = flipped.getHeight() / layers;
     this->layers = layers;
 }
 

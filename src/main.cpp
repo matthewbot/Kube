@@ -29,13 +29,13 @@ struct TestWorldBlocks {
     BlockType grass;
 
     TestWorldBlocks() {
-        stone.setAllFaceTextureNums(0);
+        stone.setAllFaceTextureNums(3);
 
-        dirt.setAllFaceTextureNums(1);
+        dirt.setAllFaceTextureNums(2);
 
-        grass.setAllFaceTextureNums(3);
-        grass.setFaceTextureNum(Face::TOP, 2);
-        grass.setFaceTextureNum(Face::BOTTOM, 1);    
+        grass.setAllFaceTextureNums(0);
+        grass.setFaceTextureNum(Face::TOP, 1);
+        grass.setFaceTextureNum(Face::BOTTOM, 2);    
     }
 };
 

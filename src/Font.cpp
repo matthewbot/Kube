@@ -17,13 +17,13 @@ Font::Font(const std::string &filename) {
             unsigned int id = boost::lexical_cast<unsigned int>(parsed["id"]);
             CharProp &prop = charprops[id];
             
-            prop.x = boost::lexical_cast<int>(parsed["x"]);
-            prop.y = boost::lexical_cast<int>(parsed["y"]);
-            prop.width = boost::lexical_cast<int>(parsed["width"]);
-            prop.height = boost::lexical_cast<int>(parsed["height"]);
-            prop.xoffset = boost::lexical_cast<int>(parsed["xoffset"]);
-            prop.yoffset = boost::lexical_cast<int>(parsed["yoffset"]);
-            prop.xadvance = boost::lexical_cast<int>(parsed["xadvance"]);
+            prop.x = boost::lexical_cast<unsigned int>(parsed["x"]);
+            prop.y = boost::lexical_cast<unsigned int>(parsed["y"]);
+            prop.width = boost::lexical_cast<unsigned int>(parsed["width"]);
+            prop.height = boost::lexical_cast<unsigned int>(parsed["height"]);
+            prop.xoffset = boost::lexical_cast<unsigned int>(parsed["xoffset"]);
+            prop.yoffset = boost::lexical_cast<unsigned int>(parsed["yoffset"]);
+            prop.xadvance = boost::lexical_cast<unsigned int>(parsed["xadvance"]);
 
             std::cout << (char)id << ' '
                       << prop.x << ' '
@@ -37,6 +37,9 @@ Font::Font(const std::string &filename) {
             Image img = Image::loadPNG(parsed["file"]);
             std::cout << "Loaded " << parsed["file"] << std::endl;
             tex = Texture{img};
+        } else if (type == "common") {
+            line_height = boost::lexical_cast<unsigned int>(parsed["lineHeight"]);
+            base_height = boost::lexical_cast<unsigned int>(parsed["base"]);
         }
     }
 }
@@ -88,18 +91,18 @@ Mesh Font::tesselate(const std::string &str) const {
 
         const float xmin = curx + prop.xoffset;
         const float xmax = xmin + prop.width;
-        const float ymin = 50 - prop.yoffset - prop.height; // TODO
-        const float ymax = ymin + prop.height;
+        const float ymax = base_height - prop.yoffset;
+        const float ymin = ymax - prop.height;
         const float txmin = prop.x / texwidth;
         const float txmax = txmin + prop.width / texwidth;
-        const float tymin = prop.y / texheight;
-        const float tymax = tymin + prop.height / texheight;
+        const float tymax = 1 - prop.y / texheight;
+        const float tymin = tymax - prop.height / texheight;
 
-        vert(xmin, ymin, txmin, tymax);
-        MeshBuilder::Index a = vert(xmax, ymin, txmax, tymax);
-        MeshBuilder::Index b = vert(xmin, ymax, txmin, tymin);
+        vert(xmin, ymin, txmin, tymin);
+        MeshBuilder::Index a = vert(xmax, ymin, txmax, tymin);
+        MeshBuilder::Index b = vert(xmin, ymax, txmin, tymax);
         builder.repeatVert(a);
-        vert(xmax, ymax, txmax, tymin);
+        vert(xmax, ymax, txmax, tymax);
         builder.repeatVert(b);
 
         curx += prop.xadvance;

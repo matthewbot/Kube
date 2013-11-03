@@ -65,10 +65,10 @@ void Chunk::tesselate_face(MeshBuilder &builder, const glm::ivec3 &pos, Face fac
     const glm::vec3 tbr = bfl + glm::vec3{1, 1, 1};
 
     const unsigned int texnum = type.getFaceTextureNum(face);
-    const glm::vec3 tex_bl{0, 1, texnum};
-    const glm::vec3 tex_br{1, 1, texnum};
-    const glm::vec3 tex_tl{0, 0, texnum};
-    const glm::vec3 tex_tr{1, 0, texnum};
+    const glm::vec3 tex_bl{0, 0, texnum};
+    const glm::vec3 tex_br{1, 0, texnum};
+    const glm::vec3 tex_tl{0, 1, texnum};
+    const glm::vec3 tex_tr{1, 1, texnum};
 
     glm::vec3 normal;
 

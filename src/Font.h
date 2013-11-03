@@ -28,7 +28,9 @@ private:
 
     std::unordered_map<unsigned int, CharProp> charprops;
     Texture tex;
-
+    unsigned int line_height;
+    unsigned int base_height;
+    
     using ParsedLine =
         std::unordered_map<std::string, std::string>;
     static void parseLine(const std::string &line, ParsedLine &result);
