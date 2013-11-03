@@ -18,6 +18,10 @@ glm::mat4 PerspectiveProjection::getProjection() const {
     return glm::perspective(fov/2, aspect, near, far);
 }
 
+glm::mat4 OrthoProjection::getProjection() const {
+    return glm::ortho(left, right, bottom, top, near, far);
+}
+
 bool RPYCameraManipulator::update(RPYCamera &camera, const Window &window, float dt) {
     bool updated = false;
 
@@ -85,6 +89,10 @@ void Renderer::setProjection(const glm::mat4 &projection) {
 void Renderer::setView(const glm::mat4 &view) {
     this->view = view;
     prgm_dirty = true;
+}
+
+void Renderer::clearCamera() {
+    view = glm::mat4{1};
 }
 
 void Renderer::setProgram(ShaderProgram &prgm) {

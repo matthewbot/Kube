@@ -22,13 +22,18 @@ private:
 class Texture : public BaseTexture {
     friend class Renderer;
 public:
-    Texture() { }
+    Texture() : width(0), height(0) { }
     Texture(const Image &img) { setImage(img); }
 
+    unsigned int getWidth() const { return width; }
+    unsigned int getHeight() const { return height; }
+    
     void setImage(const Image &img);
 
 private:
     void bind() const;
+
+    unsigned int width, height;
 };
 
 class ArrayTexture : public BaseTexture {
@@ -37,10 +42,17 @@ public:
     ArrayTexture() { }
     ArrayTexture(const Image &img, unsigned int layers) { setImage(img, layers); }
 
+    unsigned int getWidth() const { return width; }
+    unsigned int getHeight() const { return height; }
+    unsigned int getLayers() const { return layers; }
+    
     void setImage(const Image &img, unsigned int layers);
 
 private:
     void bind() const;
+
+    unsigned int width, height;
+    unsigned int layers;
 };
 
 class Sampler : public IDBase<Sampler> {

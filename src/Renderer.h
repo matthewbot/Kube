@@ -47,6 +47,20 @@ struct PerspectiveProjection {
     glm::mat4 getProjection() const;
 };
 
+struct OrthoProjection {
+    float left = 0;
+    float right = 0;
+    float bottom = 0;
+    float top = 0;
+    float near = -1;
+    float far = 1;
+
+    OrthoProjection() { }
+    OrthoProjection(float width, float height) : right(width), top(height) { }
+    
+    glm::mat4 getProjection() const;
+};
+
 class Renderer {
 public:
     Renderer();
@@ -69,11 +83,13 @@ public:
         setView(t.getView());
     }
 
+    void clearCamera();
+
     template <typename Tex>
     void setTexture(unsigned int pos, const Tex &tex, const Sampler &sampler) {
         glActiveTexture(GL_TEXTURE0 + pos);
         tex.bind();
-        glBindSampler(pos, sampler.getID());
+        glBindSampler(pos, sampler.getID()); // TODO .bind()
     }
 
     void setProgram(ShaderProgram &prgm);

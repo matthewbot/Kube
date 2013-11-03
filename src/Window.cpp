@@ -37,6 +37,9 @@ Window::Window(unsigned int width, unsigned int height) :
     glDepthFunc(GL_LEQUAL);
     glDepthRange(0.0f, 1.0f);
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     glEnable(GL_FRAMEBUFFER_SRGB);
 }
 

@@ -7,6 +7,7 @@
 #include "Window.h"
 #include "Renderer.h"
 #include "perlin.h"
+#include "Font.h"
 #include <unistd.h>
 #include <iostream>
 #include <tuple>
@@ -102,12 +103,19 @@ int main(int argc, char **argv) {
     Image img = Image::loadPNG("blocks.png");
     ArrayTexture tex{img, 4};
 
+    Font font{"font.fnt"};
+    Mesh fontmesh = font.tesselate("Hello World!");
+    
     Sampler sampler{Sampler::NEAREST};
 
     Shader vert{Shader::Type::VERTEX, "vert.glsl"};
     Shader frag{Shader::Type::FRAGMENT, "frag.glsl"};
     ShaderProgram prgm{vert, frag};
 
+    Shader vert2d{Shader::Type::VERTEX, "vert2d.glsl"};
+    Shader frag2d{Shader::Type::FRAGMENT, "frag2d.glsl"};
+    ShaderProgram prgm2d{vert2d, frag2d};
+    
     std::default_random_engine rand;
     TestWorldGenerator gen;
     World world(gen);
@@ -115,11 +123,6 @@ int main(int argc, char **argv) {
     auto regenWorld = [&]() {
         world.getChunks().clearAllChunks();
         gen.reseed(rand());
-        for (int x=-2; x<=2; x++) {
-            for (int y=-2; y<=2; y++) {
-                world.generateChunk(glm::ivec3{x, y, 0});
-            }
-        }
     };
     regenWorld();
 
@@ -128,9 +131,6 @@ int main(int argc, char **argv) {
 
     Renderer renderer;
     renderer.setWindow(window);
-    renderer.setProjection(projection);
-    renderer.setProgram(prgm);
-    renderer.setTexture(0, tex, sampler);
 
     RPYCameraManipulator camera_manipulator{.002, 5};
     RPYCamera camera;
@@ -146,9 +146,8 @@ int main(int argc, char **argv) {
             io.stop();
         }
 
-        if (camera_manipulator.update(camera, window, 1/50.0)) {
-            renderer.setCamera(camera);
-        }
+        camera_manipulator.update(camera, window, 1/50.0); // TODO cleanup
+        renderer.setCamera(camera); 
 
         if (window.isKeyPressed('r')) {
             regenWorld();
@@ -170,6 +169,7 @@ int main(int argc, char **argv) {
         }
 
         if (window.isMousePressed(MouseButton::RIGHT)) {
+            // TODO unproject using ortho
             glm::vec3 pos, dir;
             std::tie(pos, dir) = renderer.unproject(
                 window.getNDCPos(window.getMousePos()));
@@ -199,12 +199,25 @@ int main(int argc, char **argv) {
         
         window.clear();
 
+        renderer.setProjection(projection);
+        renderer.setProgram(prgm);
+        renderer.setTexture(0, tex, sampler);
+
         for (const auto &meshpos : world.getChunks().getMeshPoses()) {
             glm::mat4 model{1};
             model = glm::translate(model, glm::vec3{32*meshpos.first});
             renderer.render(model, meshpos.second);
         }
 
+        renderer.setProjection(OrthoProjection{
+                static_cast<float>(window.getWidth()),
+                static_cast<float>(window.getHeight())});
+        renderer.clearCamera();
+        renderer.setProgram(prgm2d);
+        renderer.setTexture(0, font.getTexture(), sampler);
+        glDisable(GL_DEPTH_TEST);
+        renderer.render(glm::mat4{1}, fontmesh);
+        glEnable(GL_DEPTH_TEST);    
         window.swapBuffers();
 
         timer.expires_at(timer.expires_at() + rate);

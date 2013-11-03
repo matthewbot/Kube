@@ -23,6 +23,8 @@ void Texture::setImage(const Image &img) {
                  img.getWidth(), img.getHeight(),
                  0, GL_RGBA, GL_UNSIGNED_BYTE, img.getData());
     glGenerateMipmap(GL_TEXTURE_2D);
+    width = img.getWidth();
+    height = img.getHeight();
 }
 
 void Texture::bind() const {
@@ -36,6 +38,9 @@ void ArrayTexture::setImage(const Image &img, unsigned int layers) {
                  img.getWidth(), img.getHeight()/layers, layers,
                  0, GL_RGBA, GL_UNSIGNED_BYTE, img.getData());
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+    width = img.getWidth();
+    height = img.getHeight() / layers;
+    this->layers = layers;
 }
 
 void ArrayTexture::bind() const {

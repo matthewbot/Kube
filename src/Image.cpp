@@ -80,6 +80,15 @@ Image Image::loadPNG(const std::string &filename) {
     if (color_type == PNG_COLOR_TYPE_RGB)
         png_set_filler(png_ptr, 0xFF, PNG_FILLER_AFTER);
 
+    if (color_type == PNG_COLOR_TYPE_GRAY) {
+        png_set_gray_to_rgb(png_ptr);
+        png_set_filler(png_ptr, 0xFF, PNG_FILLER_AFTER);
+    }
+
+    if (color_type == PNG_COLOR_TYPE_GRAY_ALPHA) {
+        png_set_gray_to_rgb(png_ptr);
+    }
+
     double gamma;
     if (!png_get_gAMA(png_ptr, info_ptr, &gamma)) {
         gamma = 0.45455;
