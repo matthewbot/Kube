@@ -5,7 +5,7 @@
 
 static constexpr float pi = static_cast<float>(M_PI);
 
-glm::mat4 RPYCamera::getView() const {
+glm::mat4 RPYCamera::getMatrix() const {
     glm::mat4 view;
     view = glm::rotate(view, -90.0f, glm::vec3{1, 0, 0});
     view = glm::rotate(view, -pitch/pi*180, glm::vec3{1, 0, 0});
@@ -14,12 +14,34 @@ glm::mat4 RPYCamera::getView() const {
     return view;
 }
 
-glm::mat4 PerspectiveProjection::getProjection() const {
+glm::mat4 PerspectiveProjection::getMatrix() const {
     return glm::perspective(fov/2, aspect, near, far);
 }
 
-glm::mat4 OrthoProjection::getProjection() const {
+glm::mat4 OrthoProjection::getMatrix() const {
     return glm::ortho(left, right, bottom, top, near, far);
+}
+
+std::pair<glm::vec3, glm::vec3> unproject(const glm::mat4 &projection,
+                                          const glm::mat4 &view,
+                                          const glm::vec2 &window_pos) {
+    glm::vec4 ndc_pos_near{window_pos, 0, 1};
+    glm::vec4 ndc_pos_far{window_pos, 1, 1};
+
+    auto inv_pjmv = glm::inverse(projection * view);
+    auto world_pos_near = inv_pjmv * ndc_pos_near;
+    auto world_pos_far = inv_pjmv * ndc_pos_far;
+
+    world_pos_near /= world_pos_near.w;
+    world_pos_far /= world_pos_far.w;
+
+    auto vec = glm::normalize(world_pos_far - world_pos_near);
+    return std::make_pair(glm::vec3{world_pos_near.x,
+                                    world_pos_near.y,
+                                    world_pos_near.z},
+                          glm::vec3{vec.x,
+                                    vec.y,
+                                    vec.z});
 }
 
 bool RPYCameraManipulator::update(RPYCamera &camera, const Window &window, float dt) {
@@ -103,26 +125,6 @@ void Renderer::setProgram(ShaderProgram &prgm) {
 void Renderer::render(const glm::mat4 &model, const Mesh &mesh) {
     setup_program(model);
     mesh.draw();
-}
-
-std::pair<glm::vec3, glm::vec3> Renderer::unproject(const glm::vec2 &window_pos) {
-    glm::vec4 ndc_pos_near{window_pos, 0, 1};
-    glm::vec4 ndc_pos_far{window_pos, 1, 1};
-
-    auto inv_pjmv = glm::inverse(projection * view);
-    auto world_pos_near = inv_pjmv * ndc_pos_near;
-    auto world_pos_far = inv_pjmv * ndc_pos_far;
-
-    world_pos_near /= world_pos_near.w;
-    world_pos_far /= world_pos_far.w;
-
-    auto vec = glm::normalize(world_pos_far - world_pos_near);
-    return std::make_pair(glm::vec3{world_pos_near.x,
-                                    world_pos_near.y,
-                                    world_pos_near.z},
-                          glm::vec3{vec.x,
-                                    vec.y,
-                                    vec.z});
 }
 
 void Renderer::setup_program(const glm::mat4 &model) {

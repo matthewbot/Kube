@@ -57,6 +57,7 @@ private:
 
 class Sampler : public IDBase<Sampler> {
     friend class IDBase<Sampler>;
+    friend class Renderer;
 public:
     enum Filter {
         NEAREST,
@@ -70,6 +71,8 @@ public:
     void setWrap(bool wrap);
 
 private:
+    void bind(unsigned int pos) const;
+    
     void deleteId();
 };
 

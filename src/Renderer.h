@@ -16,7 +16,7 @@ struct RPYCamera {
     Radians<float> pitch = 0;
     Radians<float> yaw = 0;
 
-    glm::mat4 getView() const;
+    glm::mat4 getMatrix() const;
 };
 
 class RPYCameraManipulator {
@@ -44,7 +44,7 @@ struct PerspectiveProjection {
     float near = .01;
     float far = 1e3;
 
-    glm::mat4 getProjection() const;
+    glm::mat4 getMatrix() const;
 };
 
 struct OrthoProjection {
@@ -58,8 +58,12 @@ struct OrthoProjection {
     OrthoProjection() { }
     OrthoProjection(float width, float height) : right(width), top(height) { }
     
-    glm::mat4 getProjection() const;
+    glm::mat4 getMatrix() const;
 };
+
+std::pair<glm::vec3, glm::vec3> unproject(const glm::mat4 &projection,
+                                          const glm::mat4 &view,
+                                          const glm::vec2 &window_pos);
 
 class Renderer {
 public:
@@ -75,12 +79,12 @@ public:
 
     template <typename T>
     void setProjection(const T &t) {
-        setProjection(t.getProjection());
+        setProjection(t.getMatrix());
     }
 
     template <typename T>
     void setCamera(const T &t) {
-        setView(t.getView());
+        setView(t.getMatrix());
     }
 
     void clearCamera();
@@ -89,13 +93,11 @@ public:
     void setTexture(unsigned int pos, const Tex &tex, const Sampler &sampler) {
         glActiveTexture(GL_TEXTURE0 + pos);
         tex.bind();
-        glBindSampler(pos, sampler.getID()); // TODO .bind()
+        sampler.bind(pos);
     }
 
     void setProgram(ShaderProgram &prgm);
     void render(const glm::mat4 &model, const Mesh &mesh);
-
-    std::pair<glm::vec3, glm::vec3> unproject(const glm::vec2 &windowpos);
 
 private:
     const Window *window;

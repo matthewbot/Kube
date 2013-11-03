@@ -76,6 +76,10 @@ void Sampler::setWrap(bool wrap) {
 
 }
 
+void Sampler::bind(unsigned int pos) const {
+    glBindSampler(pos, id);
+}
+
 void Sampler::deleteId() {
     GLuint tmp = id;
     glDeleteSamplers(1, &tmp);

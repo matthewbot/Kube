@@ -146,9 +146,7 @@ int main(int argc, char **argv) {
             io.stop();
         }
 
-        camera_manipulator.update(camera, window, 1/50.0); // TODO cleanup
-        renderer.setCamera(camera); 
-        renderer.setProjection(projection); // TODO cleanup
+        camera_manipulator.update(camera, window, 1/50.0);
 
         if (window.isKeyPressed('r')) {
             regenWorld();
@@ -156,7 +154,9 @@ int main(int argc, char **argv) {
 
         if (window.isKeyPressed('p')) {
             glm::vec3 pos, dir;
-            std::tie(pos, dir) = renderer.unproject(
+            std::tie(pos, dir) = unproject(
+                projection.getMatrix(),
+                camera.getMatrix(),
                 window.getNDCPos(window.getMousePos()));
             auto pick = world.getChunks().pick(pos, dir, 10);
             if (pick) {
@@ -170,9 +170,10 @@ int main(int argc, char **argv) {
         }
 
         if (window.isMousePressed(MouseButton::RIGHT)) {
-            // TODO unproject using ortho
             glm::vec3 pos, dir;
-            std::tie(pos, dir) = renderer.unproject(
+            std::tie(pos, dir) = unproject(
+                projection.getMatrix(),
+                camera.getMatrix(),
                 window.getNDCPos(window.getMousePos()));
             auto pick = world.getChunks().pick(pos, dir, 10);
             if (pick) {
@@ -200,6 +201,8 @@ int main(int argc, char **argv) {
         
         window.clear();
 
+        renderer.setCamera(camera); 
+        renderer.setProjection(projection);
         renderer.setProgram(prgm);
         renderer.setTexture(0, tex, sampler);
 
