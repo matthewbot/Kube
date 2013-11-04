@@ -1,3 +1,4 @@
+#include "Lua.h"
 #include "Shader.h"
 #include "Buffer.h"
 #include "Chunk.h"
@@ -98,6 +99,9 @@ private:
 };
 
 int main(int argc, char **argv) {
+    Lua lua;
+    lua.runFile("game.lua");
+    
     Window window{800, 600};
 
     Image img = Image::loadPNG("blocks.png");

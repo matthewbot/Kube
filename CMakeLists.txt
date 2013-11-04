@@ -22,9 +22,12 @@ find_package(PNG REQUIRED)
 include_directories(${PNG_INCLUDE_DIRS})
 add_definitions(${PNG_DEFINITIONS})
 
+find_package(LuaJIT REQUIRED)
+include_directories(${LUAJIT_INCLUDE_DIR})
+
 file(GLOB_RECURSE sources src/*.cpp)
 add_executable(test ${sources})
-target_link_libraries(test ${Boost_LIBRARIES} ${GLFW_LIBRARIES} ${GLEW_LIBRARIES} ${PNG_LIBRARIES} GL)
+target_link_libraries(test ${Boost_LIBRARIES} ${GLFW_LIBRARIES} ${GLEW_LIBRARIES} ${PNG_LIBRARIES} GL ${LUAJIT_LIBRARY})
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g -gdwarf-3" CACHE STRING "Flags used by the compiler during debug builds" FORCE)
 
