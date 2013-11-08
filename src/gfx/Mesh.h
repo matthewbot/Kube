@@ -1,8 +1,8 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "Buffer.h"
-#include "VertexArrayObject.h"
+#include "gfx/Buffer.h"
+#include "gfx/VertexArrayObject.h"
 
 #include <glm/glm.hpp>
 #include <initializer_list>

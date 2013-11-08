@@ -1,4 +1,5 @@
-#include "Image.h"
+#include "gfx/Image.h"
+
 #include <cstdio>
 #include <png.h>
 #include <algorithm>

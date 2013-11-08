@@ -1,4 +1,4 @@
-#include "Shader.h"
+#include "gfx/Shader.h"
 #include <GL/glew.h>
 #include <GL/glfw.h>
 #include <algorithm>

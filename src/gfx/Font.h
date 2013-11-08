@@ -1,8 +1,8 @@
 #ifndef FONT_H
 #define FONT_H
 
-#include "Mesh.h"
-#include "Texture.h"
+#include "gfx/Mesh.h"
+#include "gfx/Texture.h"
 
 #include <boost/variant.hpp>
 #include <string>

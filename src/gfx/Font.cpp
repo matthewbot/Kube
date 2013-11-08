@@ -1,5 +1,6 @@
-#include "Font.h"
-#include "Image.h"
+#include "gfx/Font.h"
+#include "gfx/Image.h"
+
 #include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <iostream>

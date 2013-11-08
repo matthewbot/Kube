@@ -2,10 +2,11 @@
 #define CAMERA_H
 
 #include "util.h"
-#include "Texture.h"
-#include "Window.h"
-#include "Shader.h"
-#include "Mesh.h"
+#include "gfx/Texture.h"
+#include "gfx/Window.h"
+#include "gfx/Shader.h"
+#include "gfx/Mesh.h"
+
 #include <glm/glm.hpp>
 #include <boost/optional.hpp>
 #include <initializer_list>

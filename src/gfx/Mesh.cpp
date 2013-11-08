@@ -1,4 +1,4 @@
-#include "Mesh.h"
+#include "gfx/Mesh.h"
 #include <algorithm>
 #include <cassert>
 #include <GL/glew.h>

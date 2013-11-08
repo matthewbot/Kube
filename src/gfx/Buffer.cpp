@@ -1,6 +1,6 @@
-#include "Buffer.h"
-#include "GL/glew.h"
+#include "gfx/Buffer.h"
 
+#include <GL/glew.h>
 #include <iostream>
 
 void Buffer::setData(const void *data, size_t len, Type type) {

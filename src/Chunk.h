@@ -1,7 +1,7 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
-#include "Mesh.h"
+#include "gfx/Mesh.h"
 #include "Block.h"
 
 #include <boost/optional.hpp>

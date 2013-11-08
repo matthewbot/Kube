@@ -26,6 +26,7 @@ find_package(LuaJIT REQUIRED)
 include_directories(${LUAJIT_INCLUDE_DIR})
 
 file(GLOB_RECURSE sources src/*.cpp)
+include_directories(src)
 add_executable(test ${sources})
 target_link_libraries(test ${Boost_LIBRARIES} ${GLFW_LIBRARIES} ${GLEW_LIBRARIES} ${PNG_LIBRARIES} GL ${LUAJIT_LIBRARY})
 

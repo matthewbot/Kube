@@ -1,4 +1,4 @@
-#include "VertexArrayObject.h"
+#include "gfx/VertexArrayObject.h"
 #include <GL/glew.h>
 
 #include <iostream>

@@ -1,4 +1,4 @@
-#include "Window.h"
+#include "gfx/Window.h"
 #include <GL/glew.h>
 #include <GL/glfw.h>
 #include <stdexcept>
