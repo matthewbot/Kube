@@ -39,7 +39,7 @@ private:
 class ArrayTexture : public BaseTexture {
     friend class Renderer;
 public:
-    ArrayTexture() { }
+    ArrayTexture() : width(0), height(0), layers(0) { }
     ArrayTexture(const Image &img, unsigned int layers) { setImage(img, layers); }
 
     unsigned int getWidth() const { return width; }

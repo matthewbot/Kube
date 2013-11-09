@@ -5,7 +5,11 @@
 #include <fstream>
 #include <iostream>
 
-Font::Font(const std::string &filename) {
+Font::Font() : line_height(0), base_height(0) { }
+
+void Font::load(const std::string &filename) {
+    charprops.clear();
+    
     std::ifstream in(filename);
     
     std::string line;
@@ -35,9 +39,7 @@ Font::Font(const std::string &filename) {
                       << prop.yoffset << ' '
                       << prop.xadvance << ' ' << std::endl;
         } else if (type == "page") {
-            Image img = Image::loadPNG(parsed["file"]);
-            std::cout << "Loaded " << parsed["file"] << std::endl;
-            tex = Texture{img};
+            tex.setImage(Image::loadPNG(parsed["file"]));
         } else if (type == "common") {
             line_height = boost::lexical_cast<unsigned int>(parsed["lineHeight"]);
             base_height = boost::lexical_cast<unsigned int>(parsed["base"]);

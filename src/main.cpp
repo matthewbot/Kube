@@ -1,6 +1,7 @@
 #include "Lua.h"
 #include "gfx/Shader.h"
 #include "gfx/Buffer.h"
+#include "gfx/GraphicsSystem.h"
 #include "Chunk.h"
 #include "World.h"
 #include "gfx/Image.h"
@@ -101,26 +102,7 @@ private:
 int main(int argc, char **argv) {
     Lua lua;
     lua.runFile("game.lua");
-    
-    Window window{800, 600};
 
-    Image img = Image::loadPNG("blocks.png");
-    ArrayTexture tex{img, 4};
-
-    Font font{"font.fnt"};
-    Mesh fontmesh = font.tesselate("Hello World!");
-    
-    Sampler sampler{Sampler::NEAREST};
-
-    Shader vert{Shader::Type::VERTEX, "vert.glsl"};
-    Shader frag{Shader::Type::FRAGMENT, "frag.glsl"};
-    ShaderProgram prgm{vert, frag};
-
-    Shader vert2d{Shader::Type::VERTEX, "vert2d.glsl"};
-    Shader frag2d{Shader::Type::FRAGMENT, "frag2d.glsl"};
-    ShaderProgram prgm2d{vert2d, frag2d};
-    
-    std::default_random_engine rand;
     TestWorldGenerator gen;
     World world(gen);
 
@@ -130,15 +112,10 @@ int main(int argc, char **argv) {
     };
     regenWorld();
 
-    PerspectiveProjection projection;
-    projection.aspect = window.getAspectRatio();
-
-    Renderer renderer;
-    renderer.setWindow(window);
-
+    GraphicsSystem gfx{world};
+    gfx.getCamera().pos.z = 40;
+    
     RPYCameraManipulator camera_manipulator{.002, 5};
-    RPYCamera camera;
-    camera.pos.z = 40;
 
     static const auto rate = boost::posix_time::seconds(1/60.0);
     boost::asio::io_service io;
@@ -146,6 +123,9 @@ int main(int argc, char **argv) {
 
     std::function<void (const boost::system::error_code &)> render =
         [&](const boost::system::error_code &err) -> void {
+        Window &window = gfx.getWindow();
+        RPYCamera &camera = gfx.getCamera();
+        
         if (window.isClosed()) {
             io.stop();
         }
@@ -156,27 +136,10 @@ int main(int argc, char **argv) {
             regenWorld();
         }
 
-        if (window.isKeyPressed('p')) {
-            glm::vec3 pos, dir;
-            std::tie(pos, dir) = unproject(
-                projection.getMatrix(),
-                camera.getMatrix(),
-                window.getNDCPos(window.getMousePos()));
-            auto pick = world.getChunks().pick(pos, dir, 10);
-            if (pick) {
-                std::cout << "Picked "
-                          << pick->x << " "
-                          << pick->y << " "
-                          << pick->z << std::endl;
-            } else {
-                std::cout << "No pick" << std::endl;
-            }
-        }
-
         if (window.isMousePressed(MouseButton::RIGHT)) {
             glm::vec3 pos, dir;
             std::tie(pos, dir) = unproject(
-                projection.getMatrix(),
+                gfx.getPerspectiveProjection().getMatrix(),
                 camera.getMatrix(),
                 window.getNDCPos(window.getMousePos()));
             auto pick = world.getChunks().pick(pos, dir, 10);
@@ -203,30 +166,8 @@ int main(int argc, char **argv) {
                 break;
         }
         
-        window.clear();
-
-        renderer.setCamera(camera); 
-        renderer.setProjection(projection);
-        renderer.setProgram(prgm);
-        renderer.setTexture(0, tex, sampler);
-
-        for (const auto &meshpos : world.getChunks().getMeshPoses()) {
-            glm::mat4 model{1};
-            model = glm::translate(model, glm::vec3{32*meshpos.first});
-            renderer.render(model, meshpos.second);
-        }
-
-        renderer.setProjection(OrthoProjection{
-                static_cast<float>(window.getWidth()),
-                static_cast<float>(window.getHeight())});
-        renderer.clearCamera();
-        renderer.setProgram(prgm2d);
-        renderer.setTexture(0, font.getTexture(), sampler);
-        glDisable(GL_DEPTH_TEST);
-        renderer.render(glm::mat4{1}, fontmesh);
-        glEnable(GL_DEPTH_TEST);    
-        window.swapBuffers();
-
+        gfx.render();
+        
         timer.expires_at(timer.expires_at() + rate);
         timer.async_wait(render);
     };

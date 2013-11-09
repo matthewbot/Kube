@@ -10,8 +10,11 @@
 
 class Font {
 public:
-    explicit Font(const std::string &filename);
+    Font();
+    explicit Font(const std::string &filename) { load(filename); }
 
+    void load(const std::string &filename);
+    
     const Texture &getTexture() const { return tex; }
     Mesh tesselate(const std::string &str) const;
     

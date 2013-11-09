@@ -39,7 +39,8 @@ void ArrayTexture::setImage(const Image &img, unsigned int layers) {
     bind();
 
     Image flipped = img.flipped();
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, flipped.getGamma() < 1 ? GL_SRGB8_ALPHA8 : GL_RGBA8,
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0,
+                 flipped.getGamma() < 1 ? GL_SRGB8_ALPHA8 : GL_RGBA8,
                  flipped.getWidth(), flipped.getHeight()/layers, layers,
                  0, GL_RGBA, GL_UNSIGNED_BYTE, flipped.getData());
     glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
@@ -73,7 +74,6 @@ void Sampler::setWrap(bool wrap) {
     GLint glwrap = wrap ? GL_REPEAT : GL_CLAMP_TO_EDGE;
     glSamplerParameteri(id, GL_TEXTURE_WRAP_S, glwrap);
     glSamplerParameteri(id, GL_TEXTURE_WRAP_T, glwrap);
-
 }
 
 void Sampler::bind(unsigned int pos) const {
