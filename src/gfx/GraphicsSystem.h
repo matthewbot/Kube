@@ -8,10 +8,18 @@
 #include "gfx/Texture.h"
 #include "gfx/Font.h"
 
+#include <boost/asio.hpp>
+
 class GraphicsSystem {
 public:
-    GraphicsSystem(const World &world);
+    typedef std::function<void ()> InputCallback;
+    
+    GraphicsSystem(const World &world, boost::asio::io_service &main_io);
 
+    void setInputCallback(const InputCallback &input_callback) {
+        this->input_callback = input_callback;
+    }
+    
     Window &getWindow() { return window; }
     const Window &getWindow() const { return window; }
 
@@ -21,11 +29,15 @@ public:
     PerspectiveProjection getPerspectiveProjection();
     OrthoProjection getOrthoProjection();
 
-    void render();
-    
 private:
-    const World &world;
+    void renderFrame();
+    void waitTimer();
 
+    const World &world;
+    boost::asio::io_service &main_io;
+    boost::asio::deadline_timer timer;
+    InputCallback input_callback;
+    
     Window window;
     Renderer renderer;
     RPYCamera camera;

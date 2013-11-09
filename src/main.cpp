@@ -112,17 +112,14 @@ int main(int argc, char **argv) {
     };
     regenWorld();
 
-    GraphicsSystem gfx{world};
+    boost::asio::io_service io;
+
+    GraphicsSystem gfx{world, io};
     gfx.getCamera().pos.z = 40;
     
     RPYCameraManipulator camera_manipulator{.002, 5};
 
-    static const auto rate = boost::posix_time::seconds(1/60.0);
-    boost::asio::io_service io;
-    boost::asio::deadline_timer timer(io, rate);
-
-    std::function<void (const boost::system::error_code &)> render =
-        [&](const boost::system::error_code &err) -> void {
+    gfx.setInputCallback([&]() {
         Window &window = gfx.getWindow();
         RPYCamera &camera = gfx.getCamera();
         
@@ -165,14 +162,8 @@ int main(int argc, char **argv) {
             if (world.generateChunk(chunkpos))
                 break;
         }
-        
-        gfx.render();
-        
-        timer.expires_at(timer.expires_at() + rate);
-        timer.async_wait(render);
-    };
+    });
 
-    timer.async_wait(render);
     io.run();
 
     return 0;

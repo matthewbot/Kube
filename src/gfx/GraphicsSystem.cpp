@@ -1,9 +1,15 @@
 #include "gfx/GraphicsSystem.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <boost/bind.hpp>
 
-GraphicsSystem::GraphicsSystem(const World &world) :
+static const auto rate = boost::posix_time::seconds(1/60.0);
+
+GraphicsSystem::GraphicsSystem(const World &world,
+                               boost::asio::io_service &main_io) :
     world(world),
+    main_io(main_io),
+    timer(main_io, rate),
     window(800, 600)
 {
     Shader vert3d{Shader::Type::VERTEX, "vert.glsl"};
@@ -19,6 +25,8 @@ GraphicsSystem::GraphicsSystem(const World &world) :
     
     font.load("font.fnt");
     fontmesh = font.tesselate("Hello World!");
+
+    waitTimer();
 }
 
 PerspectiveProjection GraphicsSystem::getPerspectiveProjection() {
@@ -33,7 +41,7 @@ OrthoProjection GraphicsSystem::getOrthoProjection() {
         static_cast<float>(window.getHeight())};
 }
 
-void GraphicsSystem::render() {
+void GraphicsSystem::renderFrame() {
     window.clear();
 
     renderer.setCamera(camera);
@@ -55,4 +63,19 @@ void GraphicsSystem::render() {
     renderer.render(glm::mat4{1}, fontmesh);
     glEnable(GL_DEPTH_TEST);    
     window.swapBuffers();
+}
+
+void GraphicsSystem::waitTimer() {
+    timer.async_wait([this](const boost::system::error_code &error) {
+        if (error) {
+            return;
+        }
+
+        if (input_callback) {
+            input_callback();
+        }
+        renderFrame();
+        timer.expires_at(timer.expires_at() + rate);
+        waitTimer();
+    });
 }
