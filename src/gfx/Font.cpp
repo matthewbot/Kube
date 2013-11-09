@@ -26,9 +26,9 @@ void Font::load(const std::string &filename) {
             prop.y = boost::lexical_cast<unsigned int>(parsed["y"]);
             prop.width = boost::lexical_cast<unsigned int>(parsed["width"]);
             prop.height = boost::lexical_cast<unsigned int>(parsed["height"]);
-            prop.xoffset = boost::lexical_cast<unsigned int>(parsed["xoffset"]);
-            prop.yoffset = boost::lexical_cast<unsigned int>(parsed["yoffset"]);
-            prop.xadvance = boost::lexical_cast<unsigned int>(parsed["xadvance"]);
+            prop.xoffset = boost::lexical_cast<int>(parsed["xoffset"]);
+            prop.yoffset = boost::lexical_cast<int>(parsed["yoffset"]);
+            prop.xadvance = boost::lexical_cast<int>(parsed["xadvance"]);
 
             std::cout << (char)id << ' '
                       << prop.x << ' '

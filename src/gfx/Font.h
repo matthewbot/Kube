@@ -24,9 +24,9 @@ private:
         unsigned int y;
         unsigned int width;
         unsigned int height;
-        unsigned int xoffset;
-        unsigned int yoffset;
-        unsigned int xadvance;
+        int xoffset;
+        int yoffset;
+        int xadvance;
     };
 
     std::unordered_map<unsigned int, CharProp> charprops;
