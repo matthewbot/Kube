@@ -15,7 +15,9 @@ class GraphicsSystem {
 public:
     typedef std::function<void ()> InputCallback;
     
-    GraphicsSystem(const World &world, boost::asio::io_service &main_io);
+    GraphicsSystem(const World &world,
+                   boost::asio::io_service &main_io,
+                   boost::asio::io_service &work_io);
 
     void setInputCallback(const InputCallback &input_callback) {
         this->input_callback = input_callback;

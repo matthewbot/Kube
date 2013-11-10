@@ -11,7 +11,7 @@ std::shared_ptr<const Chunk> ChunkGrid::getChunk(const glm::ivec3 &pos) const {
     }
 }
 
-void ChunkGrid::setChunk(const glm::ivec3 &pos, std::unique_ptr<Chunk> &&chunk) {
+void ChunkGrid::setChunk(const glm::ivec3 &pos, std::shared_ptr<Chunk> chunk) {
     auto &entry = chunks[pos];
     entry.chunk = std::move(chunk);
 }

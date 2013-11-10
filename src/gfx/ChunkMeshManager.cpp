@@ -29,20 +29,32 @@ const Mesh *ChunkMeshManager::getMeshOrAsyncGenerate(const glm::ivec3 &pos) {
 }
 
 void ChunkMeshManager::asyncGenerateMesh(const glm::ivec3 &pos) {
+    // TODO race condition here actually
+    // if asyncGenerateMesh is called while an old version of the mesh
+    // is being generated, a new version won't be made
+    // Need a proper work queue
+    if (meshgen_pending.count(pos))
+        return;
+    
+    meshgen_pending.insert(pos);
     work_io.post([=]() {
         auto chunkptr = grid.getChunk(pos);
         if (!chunkptr) {
+            main_io.post([=]() {
+                meshgen_pending.erase(pos);
+            });
             return;
         }
         
         MeshBuilder builder = chunkptr->tesselate();
-        main_io.post([=, builder = std::move(builder)]() {
+        main_io.post([this, pos, builder = std::move(builder)]() {
             std::cout << "Uploading mesh at "
                       << pos.x << ","
                       << pos.y << std::endl;
             Entry &entry = meshmap[pos];
             entry.mesh = Mesh{builder}; // TODO
             entry.unused_ctr = 0;
+            meshgen_pending.erase(pos);
         });
     });
 }

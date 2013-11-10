@@ -14,7 +14,7 @@ public:
 
     std::shared_ptr<const Chunk> getChunk(const glm::ivec3 &pos) const;
 
-    void setChunk(const glm::ivec3 &pos, std::unique_ptr<Chunk> &&chunk);
+    void setChunk(const glm::ivec3 &pos, std::shared_ptr<Chunk> chunk);
     void clearAllChunks();
     
     const Block *findBlock(glm::ivec3 &pos) const;

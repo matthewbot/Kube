@@ -67,6 +67,8 @@ bool RPYCameraManipulator::update(RPYCamera &camera, const Window &window, float
     glm::vec3 vel{0, 0, 0};
 
     float modspeed = speed;
+    if (window.isControlPressed())
+        modspeed *= 10;
     if (window.isShiftPressed())
         modspeed *= 5;
     

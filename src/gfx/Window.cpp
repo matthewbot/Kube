@@ -62,6 +62,10 @@ bool Window::isShiftPressed() const {
     return glfwGetKey(GLFW_KEY_LSHIFT);
 }
 
+bool Window::isControlPressed() const {
+    return glfwGetKey(GLFW_KEY_LCTRL);
+}
+
 glm::ivec2 Window::getMousePos() const {
     int cur_x, cur_y;
     glfwGetMousePos(&cur_x, &cur_y);

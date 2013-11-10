@@ -6,12 +6,13 @@
 static const auto rate = boost::posix_time::seconds(1/60.0);
 
 GraphicsSystem::GraphicsSystem(const World &world,
-                               boost::asio::io_service &main_io) :
+                               boost::asio::io_service &main_io,
+                               boost::asio::io_service &work_io) :
     world(world),
     main_io(main_io),
     timer(main_io, rate),
     window(800, 600),
-    chunkmeshes(main_io, main_io, world.getChunks())
+    chunkmeshes(main_io, work_io, world.getChunks())
 {
     Shader vert3d{Shader::Type::VERTEX, "vert.glsl"};
     Shader frag3d{Shader::Type::FRAGMENT, "frag.glsl"};

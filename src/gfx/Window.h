@@ -17,6 +17,7 @@ public:
     bool isMousePressed(MouseButton btn) const;
     bool isKeyPressed(char ch) const;
     bool isShiftPressed() const;
+    bool isControlPressed() const;
     glm::ivec2 getMousePos() const;
     bool isClosed() const;
 

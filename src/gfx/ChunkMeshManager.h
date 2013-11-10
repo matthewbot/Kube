@@ -7,6 +7,7 @@
 #include <utility>
 #include <chrono>
 #include <boost/asio.hpp>
+#include <unordered_set>
 
 class ChunkMeshManager {
 public:
@@ -31,6 +32,7 @@ private:
         mutable int unused_ctr;
     };
     std::unordered_map<glm::ivec3, Entry> meshmap;
+    std::unordered_set<glm::ivec3> meshgen_pending;
 };
 
 #endif

@@ -16,6 +16,7 @@
 #include <boost/asio.hpp>
 #include <chrono>
 #include <random>
+#include <thread>
 #include <GL/glew.h>
 #include <GL/glfw.h>
 #include <glm/glm.hpp>
@@ -100,11 +101,15 @@ private:
 };
 
 int main(int argc, char **argv) {
+    boost::asio::io_service main_io;
+    boost::asio::io_service work_io;
+    boost::asio::io_service::work work_io_work{work_io};
+    
     Lua lua;
     lua.runFile("game.lua");
 
     TestWorldGenerator gen;
-    World world(gen);
+    World world(gen, main_io, work_io);
 
     auto regenWorld = [&]() {
         world.getChunks().clearAllChunks();
@@ -112,9 +117,7 @@ int main(int argc, char **argv) {
     };
     regenWorld();
 
-    boost::asio::io_service io;
-
-    GraphicsSystem gfx{world, io};
+    GraphicsSystem gfx{world, main_io, work_io};
     gfx.getCamera().pos.z = 40;
     
     RPYCameraManipulator camera_manipulator{.002, 5};
@@ -124,7 +127,7 @@ int main(int argc, char **argv) {
         RPYCamera &camera = gfx.getCamera();
         
         if (window.isClosed()) {
-            io.stop();
+            main_io.stop();
         }
 
         camera_manipulator.update(camera, window, 1/50.0);
@@ -160,14 +163,23 @@ int main(int argc, char **argv) {
             chunkpos.x += (rand() % range) - range/2;
             chunkpos.y += (rand() % range) - range/2;
             chunkpos.z = 0;
-            if (world.generateChunk(chunkpos)) {
-                gfx.regenerateChunkMesh(chunkpos);
-                break;
-            }
+            world.asyncGenerateChunk(chunkpos);
         }
     });
 
-    io.run();
+    std::vector<std::thread> work_threads;
 
+    for (int i=0; i<4; i++) {
+        work_threads.emplace_back([&work_io]() {
+            work_io.run();
+        });
+    }
+
+    main_io.run();
+    work_io.stop();
+    for (auto &thread : work_threads) {
+        thread.join();
+    }
+    
     return 0;
 }
