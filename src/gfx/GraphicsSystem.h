@@ -34,6 +34,8 @@ public:
 
 private:
     void renderFrame();
+    void renderChunks();
+    void renderText();
     void waitTimer();
 
     const World &world;

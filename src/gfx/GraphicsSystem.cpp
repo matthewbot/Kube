@@ -47,19 +47,36 @@ void GraphicsSystem::regenerateChunkMesh(const glm::ivec3 &chunkpos) {
 }
 
 void GraphicsSystem::renderFrame() {
-    window.clear();
+    renderChunks();
+    renderText();
+}
 
+void GraphicsSystem::renderChunks() {
+    window.clear();
     renderer.setCamera(camera);
     renderer.setProjection(getPerspectiveProjection());
     renderer.setProgram(prgm3d);
     renderer.setTexture(0, blocktex, sampler);
 
-    for (const auto &meshpos : chunkmeshes.getMeshPoses()) {
-        glm::mat4 model{1};
-        model = glm::translate(model, glm::vec3{32*meshpos.first});
-        renderer.render(model, meshpos.second);
+    glm::ivec3 centerchunkpos =
+        ChunkGrid::posToChunkBlock(glm::ivec3{camera.pos}).first;
+
+    for (int x = centerchunkpos.x - 3; x <= centerchunkpos.x + 3; x++) {
+        for (int y = centerchunkpos.y - 3; y <= centerchunkpos.y + 3; y++) {
+            glm::ivec3 meshpos{x, y, 0};
+            auto meshptr = chunkmeshes.getMeshOrAsyncGenerate(meshpos);
+            if (meshptr) {
+                glm::mat4 model{1};
+                model = glm::translate(model, glm::vec3{32*meshpos});
+                renderer.render(model, *meshptr);
+            }
+        }
     }
 
+    chunkmeshes.freeUnusedMeshes();
+}
+
+void GraphicsSystem::renderText() {
     renderer.setProjection(getOrthoProjection());
     renderer.clearCamera();
     renderer.setProgram(prgm2d);

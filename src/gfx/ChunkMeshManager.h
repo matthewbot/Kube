@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <utility>
+#include <chrono>
 #include <boost/asio.hpp>
 
 class ChunkMeshManager {
@@ -16,17 +17,20 @@ public:
     const Mesh *getMesh(const glm::ivec3 &pos) const;
     const Mesh *getMeshOrAsyncGenerate(const glm::ivec3 &pos);
 
-    using MeshPoses = std::vector<std::pair<glm::ivec3, const Mesh &>>;
-    MeshPoses getMeshPoses() const;
-    
     void asyncGenerateMesh(const glm::ivec3 &pos);
+
+    void freeUnusedMeshes();
     
 private:
     boost::asio::io_service &main_io;
     boost::asio::io_service &work_io;
     const ChunkGrid &grid;
 
-    std::unordered_map<glm::ivec3, Mesh> meshmap;
+    struct Entry {
+        Mesh mesh;
+        mutable int unused_ctr;
+    };
+    std::unordered_map<glm::ivec3, Entry> meshmap;
 };
 
 #endif
