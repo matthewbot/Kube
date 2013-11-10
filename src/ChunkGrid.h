@@ -12,9 +12,7 @@ class ChunkGrid {
 public:
     ChunkGrid();
 
-    const Chunk *getChunk(const glm::ivec3 &pos) const;
-    const Mesh *getMesh(const glm::ivec3 &pos) const;
-    std::vector<std::pair<glm::ivec3, const Mesh &>> getMeshPoses() const;
+    std::shared_ptr<const Chunk> getChunk(const glm::ivec3 &pos) const;
 
     void setChunk(const glm::ivec3 &pos, std::unique_ptr<Chunk> &&chunk);
     void clearAllChunks();
@@ -29,8 +27,7 @@ public:
 
 private:
     struct Entry {
-        std::unique_ptr<Chunk> chunk;
-        Mesh mesh;
+        std::shared_ptr<Chunk> chunk;
     };
 
     using ChunkMap = std::unordered_map<glm::ivec3, Entry>;

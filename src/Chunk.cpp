@@ -30,7 +30,7 @@ void Chunk::fill(const Block &block) {
     }
 }
 
-Mesh Chunk::tesselate() const {
+MeshBuilder Chunk::tesselate() const {
     MeshBuilder builder{MeshFormat{3, 3, 3}};
 
     for (auto i = begin(*this); i != end(*this); ++i) {
@@ -43,7 +43,7 @@ Mesh Chunk::tesselate() const {
         }
     }
 
-    return Mesh{builder};
+    return builder;
 }
 
 void Chunk::tesselate_face(MeshBuilder &builder, const glm::ivec3 &pos, Face face) const {

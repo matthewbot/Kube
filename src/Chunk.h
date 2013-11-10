@@ -38,7 +38,7 @@ public:
     const Block &getBlock(const glm::ivec3 &p) const { return data[getOffset(p)]; }
 
     void fill(const Block &block);
-    Mesh tesselate() const;
+    MeshBuilder tesselate() const;
 
     class iterator {
         friend iterator begin(Chunk &chunk);

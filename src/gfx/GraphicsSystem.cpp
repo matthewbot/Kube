@@ -10,7 +10,8 @@ GraphicsSystem::GraphicsSystem(const World &world,
     world(world),
     main_io(main_io),
     timer(main_io, rate),
-    window(800, 600)
+    window(800, 600),
+    chunkmeshes(main_io, main_io, world.getChunks())
 {
     Shader vert3d{Shader::Type::VERTEX, "vert.glsl"};
     Shader frag3d{Shader::Type::FRAGMENT, "frag.glsl"};
@@ -41,6 +42,10 @@ OrthoProjection GraphicsSystem::getOrthoProjection() {
         static_cast<float>(window.getHeight())};
 }
 
+void GraphicsSystem::regenerateChunkMesh(const glm::ivec3 &chunkpos) {
+    chunkmeshes.asyncGenerateMesh(chunkpos);
+}
+
 void GraphicsSystem::renderFrame() {
     window.clear();
 
@@ -49,7 +54,7 @@ void GraphicsSystem::renderFrame() {
     renderer.setProgram(prgm3d);
     renderer.setTexture(0, blocktex, sampler);
 
-    for (const auto &meshpos : world.getChunks().getMeshPoses()) {
+    for (const auto &meshpos : chunkmeshes.getMeshPoses()) {
         glm::mat4 model{1};
         model = glm::translate(model, glm::vec3{32*meshpos.first});
         renderer.render(model, meshpos.second);

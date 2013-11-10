@@ -2,6 +2,7 @@
 #define GRAPHICSSYSTEM_H
 
 #include "World.h"
+#include "gfx/ChunkMeshManager.h"
 #include "gfx/Window.h"
 #include "gfx/Renderer.h"
 #include "gfx/Shader.h"
@@ -29,6 +30,8 @@ public:
     PerspectiveProjection getPerspectiveProjection();
     OrthoProjection getOrthoProjection();
 
+    void regenerateChunkMesh(const glm::ivec3 &chunkpos);
+
 private:
     void renderFrame();
     void waitTimer();
@@ -48,6 +51,7 @@ private:
     Sampler sampler;
     Font font;
     Mesh fontmesh;
+    ChunkMeshManager chunkmeshes;
 };
 
 #endif
