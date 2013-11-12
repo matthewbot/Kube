@@ -1,6 +1,7 @@
 #ifndef CHUNKMESHMANAGER_H
 #define CHUNKMESHMANAGER_H
 
+#include "IOServiceThreads.h"
 #include "ChunkGrid.h"
 
 #include <vector>
@@ -11,9 +12,8 @@
 
 class ChunkMeshManager {
 public:
-    ChunkMeshManager(boost::asio::io_service &main_io,
-                     boost::asio::io_service &work_io,
-                     const ChunkGrid &grid);
+    ChunkMeshManager(const ChunkGrid &grid,
+                     IOServiceThreads &threads);
 
     const Mesh *getMesh(const glm::ivec3 &pos) const;
     const Mesh *getMeshOrAsyncGenerate(const glm::ivec3 &pos);
@@ -23,9 +23,8 @@ public:
     void freeUnusedMeshes();
     
 private:
-    boost::asio::io_service &main_io;
-    boost::asio::io_service &work_io;
     const ChunkGrid &grid;
+    IOServiceThreads &threads;
 
     struct Entry {
         Mesh mesh;

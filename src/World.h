@@ -3,6 +3,7 @@
 
 #include "ChunkGrid.h"
 #include "WorldGenerator.h"
+#include "IOServiceThreads.h"
 
 #include <boost/asio.hpp>
 #include <unordered_set>
@@ -11,8 +12,7 @@
 class World {
 public:
     World(const WorldGenerator &chunkgen,
-          boost::asio::io_service &main_io,
-          boost::asio::io_service &work_io);
+          IOServiceThreads &threads);
 
     ChunkGrid &getChunks() { return grid; }
     const ChunkGrid &getChunks() const { return grid; }
@@ -24,8 +24,7 @@ private:
     const WorldGenerator &chunkgen;
     std::unordered_set<glm::ivec3> chunkgen_pending;
 
-    boost::asio::io_service &main_io;
-    boost::asio::io_service &work_io;
+    IOServiceThreads &threads;
 };
 
 #endif

@@ -1,4 +1,5 @@
 #include "Lua.h"
+#include "IOServiceThreads.h"
 #include "gfx/Shader.h"
 #include "gfx/Buffer.h"
 #include "gfx/GraphicsSystem.h"
@@ -101,15 +102,12 @@ private:
 };
 
 int main(int argc, char **argv) {
-    boost::asio::io_service main_io;
-    boost::asio::io_service work_io;
-    boost::asio::io_service::work work_io_work{work_io};
-    
     Lua lua;
     lua.runFile("game.lua");
 
+    IOServiceThreads threads{4};
     TestWorldGenerator gen;
-    World world(gen, main_io, work_io);
+    World world(gen, threads);
 
     auto regenWorld = [&]() {
         world.getChunks().clearAllChunks();
@@ -117,7 +115,7 @@ int main(int argc, char **argv) {
     };
     regenWorld();
 
-    GraphicsSystem gfx{world, main_io, work_io};
+    GraphicsSystem gfx{world, threads};
     gfx.getCamera().pos.z = 40;
     
     RPYCameraManipulator camera_manipulator{.002, 5};
@@ -127,7 +125,7 @@ int main(int argc, char **argv) {
         RPYCamera &camera = gfx.getCamera();
         
         if (window.isClosed()) {
-            main_io.stop();
+            threads.getMainIO().stop();
         }
 
         camera_manipulator.update(camera, window, 1/50.0);
@@ -167,19 +165,7 @@ int main(int argc, char **argv) {
         }
     });
 
-    std::vector<std::thread> work_threads;
-
-    for (int i=0; i<4; i++) {
-        work_threads.emplace_back([&work_io]() {
-            work_io.run();
-        });
-    }
-
-    main_io.run();
-    work_io.stop();
-    for (auto &thread : work_threads) {
-        thread.join();
-    }
+    threads.runMain();
     
     return 0;
 }

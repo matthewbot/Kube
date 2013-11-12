@@ -1,6 +1,7 @@
 #ifndef GRAPHICSSYSTEM_H
 #define GRAPHICSSYSTEM_H
 
+#include "IOServiceThreads.h"
 #include "World.h"
 #include "gfx/ChunkMeshManager.h"
 #include "gfx/Window.h"
@@ -16,8 +17,7 @@ public:
     typedef std::function<void ()> InputCallback;
     
     GraphicsSystem(const World &world,
-                   boost::asio::io_service &main_io,
-                   boost::asio::io_service &work_io);
+                   IOServiceThreads &threads);
 
     void setInputCallback(const InputCallback &input_callback) {
         this->input_callback = input_callback;
@@ -41,7 +41,6 @@ private:
     void waitTimer();
 
     const World &world;
-    boost::asio::io_service &main_io;
     boost::asio::deadline_timer timer;
     InputCallback input_callback;
     

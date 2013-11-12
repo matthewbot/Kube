@@ -2,12 +2,10 @@
 
 #include <iostream>
 
-ChunkMeshManager::ChunkMeshManager(boost::asio::io_service &main_io,
-                                   boost::asio::io_service &work_io,
-                                   const ChunkGrid &grid) :
-    main_io(main_io),
-    work_io(work_io),
-    grid(grid) { }
+ChunkMeshManager::ChunkMeshManager(const ChunkGrid &grid,
+                                   IOServiceThreads &threads) :
+    grid(grid),
+    threads(threads) { }
 
 const Mesh *ChunkMeshManager::getMesh(const glm::ivec3 &pos) const {
     auto iter = meshmap.find(pos);
@@ -37,17 +35,17 @@ void ChunkMeshManager::asyncGenerateMesh(const glm::ivec3 &pos) {
         return;
     
     meshgen_pending.insert(pos);
-    work_io.post([=]() {
+    threads.postWork([=]() {
         auto chunkptr = grid.getChunk(pos);
         if (!chunkptr) {
-            main_io.post([=]() {
+            threads.postMain([=]() {
                 meshgen_pending.erase(pos);
             });
             return;
         }
         
         MeshBuilder builder = chunkptr->tesselate();
-        main_io.post([this, pos, builder = std::move(builder)]() {
+        threads.postMain([this, pos, builder = std::move(builder)]() {
             std::cout << "Uploading mesh at "
                       << pos.x << ","
                       << pos.y << std::endl;
