@@ -23,6 +23,27 @@ private:
     unsigned int vert_size;
 };
 
+class Mesh {
+public:
+    Mesh() : vertcount(0) { }
+    Mesh(unsigned int vertcount, const MeshFormat &format, Buffer buf, Buffer ibuf);
+
+    unsigned int getVertexCount() const { return vertcount; }
+    const MeshFormat &getFormat() const { return format; }
+
+    explicit operator bool() const { return !!vao; }
+
+    void draw() const;
+
+private:
+    unsigned int vertcount;
+    MeshFormat format;
+
+    VertexArrayObject vao;
+    Buffer buf;
+    Buffer ibuf;
+};
+
 class MeshBuilder {
 public:
     using Index = unsigned int;
@@ -50,6 +71,8 @@ public:
     const std::vector<float> &getBuffer() const { return buf; }
     const std::vector<Index> &getIndexBuffer() const { return ibuf; }
 
+    Mesh build() const;
+    
 private:
     unsigned int vert_size;
     Index next_index;
@@ -58,27 +81,6 @@ private:
     std::vector<Index> ibuf;
 
     const MeshFormat format;
-};
-
-class Mesh {
-public:
-    Mesh() : verts(0) { }
-    explicit Mesh(const MeshBuilder &builder);
-
-    unsigned int getVertexCount() const { return verts; }
-    const MeshFormat &getFormat() const { return format; }
-
-    operator bool() const { return vao; }
-
-    void draw() const;
-
-private:
-    unsigned int verts;
-    MeshFormat format;
-
-    VertexArrayObject vao;
-    Buffer buf;
-    Buffer ibuf;
 };
 
 #endif

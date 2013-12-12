@@ -111,5 +111,5 @@ Mesh Font::tesselate(const std::string &str) const {
         curx += prop.xadvance;
     }
 
-    return Mesh{builder};
+    return builder.build();
 }

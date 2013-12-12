@@ -10,7 +10,7 @@
 template <typename Self>
 class IDBase {
 public:
-    IDBase() : id(0) { }
+    IDBase() { }
     explicit IDBase(unsigned int id) : id(id) { }
     IDBase(const IDBase<Self> &) = delete;
     IDBase(IDBase<Self> &&other) { *this = std::move(other); }
@@ -25,10 +25,10 @@ public:
     }
 
     unsigned int getID() const { return id; }
-    operator bool() const { return id > 0; }
+    explicit operator bool() const { return id > 0; }
 
 protected:
-    unsigned int id;
+    unsigned int id = 0;
 
 private:
     void callDeleteId() {

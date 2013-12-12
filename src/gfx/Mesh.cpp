@@ -28,12 +28,19 @@ void MeshBuilder::repeatVert(Index index) {
     ibuf.push_back(index);
 }
 
-Mesh::Mesh(const MeshBuilder &builder) :
-    verts(builder.getVertexCount()),
-    format(builder.getFormat()),
+Mesh MeshBuilder::build() const {
+    return {getVertexCount(),
+            format,
+            Buffer{ buf },
+            Buffer{ ibuf, Buffer::ELEMENTS }};
+}
+
+Mesh::Mesh(unsigned int vertcount, const MeshFormat &format, Buffer buf_, Buffer ibuf_) :
+    vertcount(vertcount),
+    format(format),
     vao(VertexArrayObject::generate()),
-    buf(builder.getBuffer()),
-    ibuf(builder.getIndexBuffer(), Buffer::ELEMENTS)
+    buf(std::move(buf_)),
+    ibuf(std::move(ibuf_))
 {
     glBindVertexArray(vao.getID());
     glBindBuffer(GL_ARRAY_BUFFER, buf.getID());
@@ -56,6 +63,7 @@ Mesh::Mesh(const MeshBuilder &builder) :
 
 void Mesh::draw() const {
     glBindVertexArray(vao.getID());
-    glDrawElements(GL_TRIANGLES, verts, GL_UNSIGNED_INT, reinterpret_cast<void *>(0));
+    glDrawElements(GL_TRIANGLES, vertcount, GL_UNSIGNED_INT,
+                   reinterpret_cast<void *>(0));
     glBindVertexArray(0);
 }

@@ -14,7 +14,7 @@ GraphicsSystem::GraphicsSystem(const World &world,
 {
     Shader vert3d{Shader::Type::VERTEX, "vert.glsl"};
     Shader frag3d{Shader::Type::FRAGMENT, "frag.glsl"};
-    prgm3d = ShaderProgram{vert3d, frag3d}; // TODO
+    prgm3d = ShaderProgram{vert3d, frag3d};
 
     Shader vert2d{Shader::Type::VERTEX, "vert2d.glsl"};
     Shader frag2d{Shader::Type::FRAGMENT, "frag2d.glsl"};

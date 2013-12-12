@@ -55,7 +55,7 @@ void ChunkMeshManager::asyncGenerateMesh(const glm::ivec3 &pos,
                       << pos.x << ","
                       << pos.y << std::endl;
             Entry &entry = meshmap[pos];
-            entry.mesh = Mesh{builder}; // TODO
+            entry.mesh = builder.build();
             entry.chunkptr = chunk;
             entry.idlectr = 0;
             meshgen_pending.erase(chunk);
