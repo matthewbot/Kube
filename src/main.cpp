@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
                     new Chunk(*world.getChunks().getChunk(chunkpos))};
                 newchunk->getBlock(blockpos) = Block::air();
                 world.getChunks().setChunk(chunkpos, std::move(newchunk));
-                gfx.regenerateChunkMesh(chunkpos);
+//                gfx.regenerateChunkMesh(chunkpos);
             }
         }
 

@@ -2,36 +2,39 @@
 #define CHUNKMESHMANAGER_H
 
 #include "IOServiceThreads.h"
-#include "ChunkGrid.h"
+#include "Chunk.h"
+#include "Mesh.h"
 
 #include <vector>
 #include <utility>
 #include <chrono>
-#include <boost/asio.hpp>
-#include <unordered_set>
+#include <set>
+#include <unordered_map>
 
 class ChunkMeshManager {
 public:
-    ChunkMeshManager(const ChunkGrid &grid,
-                     IOServiceThreads &threads);
+    ChunkMeshManager(IOServiceThreads &threads);
 
     const Mesh *getMesh(const glm::ivec3 &pos) const;
-    const Mesh *getMeshOrAsyncGenerate(const glm::ivec3 &pos);
-
-    void asyncGenerateMesh(const glm::ivec3 &pos);
+    const Mesh *updateMesh(const glm::ivec3 &pos,
+                           const std::shared_ptr<const Chunk> &chunk);
 
     void freeUnusedMeshes();
     
 private:
-    const ChunkGrid &grid;
     IOServiceThreads &threads;
 
+    void asyncGenerateMesh(const glm::ivec3 &pos,
+                           std::shared_ptr<const Chunk> chunk);
+    
     struct Entry {
         Mesh mesh;
-        mutable int unused_ctr;
+        std::weak_ptr<const Chunk> chunkptr;
+        mutable int idlectr;
     };
     std::unordered_map<glm::ivec3, Entry> meshmap;
-    std::unordered_set<glm::ivec3> meshgen_pending;
+    // TODO unordered
+    std::set<std::shared_ptr<const Chunk>> meshgen_pending;
 };
 
 #endif

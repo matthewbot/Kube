@@ -10,7 +10,7 @@ GraphicsSystem::GraphicsSystem(const World &world,
     world(world),
     timer(threads.getMainIO(), rate),
     window(800, 600),
-    chunkmeshes(world.getChunks(), threads)
+    chunkmeshes(threads)
 {
     Shader vert3d{Shader::Type::VERTEX, "vert.glsl"};
     Shader frag3d{Shader::Type::FRAGMENT, "frag.glsl"};
@@ -41,10 +41,6 @@ OrthoProjection GraphicsSystem::getOrthoProjection() {
         static_cast<float>(window.getHeight())};
 }
 
-void GraphicsSystem::regenerateChunkMesh(const glm::ivec3 &chunkpos) {
-    chunkmeshes.asyncGenerateMesh(chunkpos);
-}
-
 void GraphicsSystem::renderFrame() {
     renderChunks();
     renderText();
@@ -62,11 +58,12 @@ void GraphicsSystem::renderChunks() {
 
     for (int x = centerchunkpos.x - 3; x <= centerchunkpos.x + 3; x++) {
         for (int y = centerchunkpos.y - 3; y <= centerchunkpos.y + 3; y++) {
-            glm::ivec3 meshpos{x, y, 0};
-            auto meshptr = chunkmeshes.getMeshOrAsyncGenerate(meshpos);
+            glm::ivec3 chunkpos{x, y, 0};
+            auto chunkptr = world.getChunks().getChunk(chunkpos);
+            auto meshptr = chunkmeshes.updateMesh(chunkpos, chunkptr);
             if (meshptr) {
                 glm::mat4 model{1};
-                model = glm::translate(model, glm::vec3{32*meshpos});
+                model = glm::translate(model, glm::vec3{32*chunkpos});
                 renderer.render(model, *meshptr);
             }
         }

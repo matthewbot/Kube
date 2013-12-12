@@ -32,8 +32,6 @@ public:
     PerspectiveProjection getPerspectiveProjection();
     OrthoProjection getOrthoProjection();
 
-    void regenerateChunkMesh(const glm::ivec3 &chunkpos);
-
 private:
     void renderFrame();
     void renderChunks();
