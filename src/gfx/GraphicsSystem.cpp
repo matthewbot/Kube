@@ -24,7 +24,6 @@ GraphicsSystem::GraphicsSystem(const World &world,
     sampler.setFilter(Sampler::NEAREST);
     
     font.load("font.fnt");
-    fontmesh = font.tesselate("Hello World!");
 
     waitTimer();
 }
@@ -58,10 +57,18 @@ void GraphicsSystem::renderChunks() {
 
     for (int x = centerchunkpos.x - 3; x <= centerchunkpos.x + 3; x++) {
         for (int y = centerchunkpos.y - 3; y <= centerchunkpos.y + 3; y++) {
-            glm::ivec3 chunkpos{x, y, 0};
-            auto chunkptr = world.getChunks().getChunk(chunkpos);
-            auto meshptr = chunkmeshes.updateMesh(chunkpos, chunkptr);
-            if (meshptr) {
+            for (int z = centerchunkpos.z - 3; z <= centerchunkpos.z + 3; z++) {
+                glm::ivec3 chunkpos{x, y, z};
+                auto chunkptr = world.getChunks().getChunk(chunkpos);
+                if (!chunkptr) {
+                    continue;
+                }
+                
+                auto meshptr = chunkmeshes.updateMesh(chunkpos, chunkptr);
+                if (!meshptr) {
+                    continue;
+                }
+                
                 glm::mat4 model{1};
                 model = glm::translate(model, glm::vec3{32*chunkpos});
                 renderer.render(model, *meshptr);
@@ -73,6 +80,12 @@ void GraphicsSystem::renderChunks() {
 }
 
 void GraphicsSystem::renderText() {
+    std::stringstream buf;
+    buf << "X: " << static_cast<int>(camera.pos.x) << ' '
+        << "Y: " << static_cast<int>(camera.pos.y) << ' '
+        << "Z: " << static_cast<int>(camera.pos.z);
+    fontmesh = font.tesselate(buf.str());
+    
     renderer.setProjection(getOrthoProjection());
     renderer.clearCamera();
     renderer.setProgram(prgm2d);

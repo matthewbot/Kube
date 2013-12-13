@@ -17,7 +17,6 @@ const Mesh *ChunkMeshManager::updateMesh(const glm::ivec3 &pos,
     auto iter = meshmap.find(pos);
     if (iter == meshmap.end()) {
         if (chunk) {
-            std::cout << "Don't have mesh!" << std::endl;
             // If we don't have it, generate it but in the mean time return null
             asyncGenerateMesh(pos, chunk);
         }

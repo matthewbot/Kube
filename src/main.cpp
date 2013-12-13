@@ -47,30 +47,36 @@ class TestWorldGenerator : public WorldGenerator {
 public:
     TestWorldGenerator() : seed(0) { }
 
+    Block generateBlock(glm::vec3 pos) const {
+        float val = 2*perlin3(pos, seed);
+
+        glm::vec3 threshpos{pos.x/20, pos.y/20, 0};            
+        float thresh = pos.z + 5*perlin3(threshpos, seed ^ 0x1);
+
+        if (val > thresh) {
+            return blocks.stone;
+        } else {
+            return Block::air();
+        }
+    }
+
     std::unique_ptr<Chunk> generateChunk(const glm::ivec3 &chunkpos) const {
         std::unique_ptr<Chunk> chunk{new Chunk{}};
 
         for (auto i = begin(*chunk); i != end(*chunk); ++i) {
             glm::vec3 pos = glm::vec3{chunkpos} + glm::vec3{i.getPos()}/32.0f;
-
-            float thresh = pos.z;
-            thresh -= 2*perlin3(pos/5.0f, seed ^ 0x1);
-            if (thresh < 0) {
-                thresh = 0;
-            }
-
-            float val = perlin3(pos, seed);
-
-            if (val > thresh) {
-                *i = blocks.stone;
-            } else {
-                *i = Block::air();
-            }
+            *i = generateBlock(pos);
         }
 
         for (int x=0; x<Chunk::XSize; x++) {
             for (int y=0; y<Chunk::YSize; y++) {
                 int ctr = 0;
+
+                glm::vec3 pos_above{chunkpos.x + x/32.0f,
+                                    chunkpos.y + y/32.0f,
+                                    chunkpos.z+1};
+                if (!generateBlock(pos_above).isAir())
+                    continue;
 
                 for (int z=Chunk::ZSize-1; z>=0; z--) {
                     Block &b = (*chunk)[glm::ivec3{x, y, z}];
@@ -148,19 +154,19 @@ int main(int argc, char **argv) {
                     new Chunk(*world.getChunks().getChunk(chunkpos))};
                 newchunk->getBlock(blockpos) = Block::air();
                 world.getChunks().setChunk(chunkpos, std::move(newchunk));
-//                gfx.regenerateChunkMesh(chunkpos);
             }
         }
 
-        static constexpr int range = 8;
         glm::ivec3 camera_chunkpos = ChunkGrid::posToChunkBlock(
             glm::ivec3{floorVec(camera.pos)}).first;
-        
+
+        static constexpr int range = 8;
+        static constexpr int zrange = 4;        
         for (int i=0; i<10; i++) {
             glm::ivec3 chunkpos = camera_chunkpos;
             chunkpos.x += (rand() % range) - range/2;
             chunkpos.y += (rand() % range) - range/2;
-            chunkpos.z = 0;
+            chunkpos.z = (rand() % zrange) - zrange/2;
             world.asyncGenerateChunk(chunkpos);
         }
     });

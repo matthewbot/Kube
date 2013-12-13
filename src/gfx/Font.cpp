@@ -29,15 +29,6 @@ void Font::load(const std::string &filename) {
             prop.xoffset = boost::lexical_cast<int>(parsed["xoffset"]);
             prop.yoffset = boost::lexical_cast<int>(parsed["yoffset"]);
             prop.xadvance = boost::lexical_cast<int>(parsed["xadvance"]);
-
-            std::cout << (char)id << ' '
-                      << prop.x << ' '
-                      << prop.y << ' '
-                      << prop.width << ' '
-                      << prop.height << ' '
-                      << prop.xoffset << ' '
-                      << prop.yoffset << ' '
-                      << prop.xadvance << ' ' << std::endl;
         } else if (type == "page") {
             tex.setImage(Image::loadPNG(parsed["file"]));
         } else if (type == "common") {
