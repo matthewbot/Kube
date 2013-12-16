@@ -60,10 +60,6 @@ void GraphicsSystem::renderChunks() {
             for (int z = centerchunkpos.z - 3; z <= centerchunkpos.z + 3; z++) {
                 glm::ivec3 chunkpos{x, y, z};
                 auto chunkptr = world.getChunks().getChunk(chunkpos);
-                if (!chunkptr) {
-                    continue;
-                }
-                
                 auto meshptr = chunkmeshes.updateMesh(chunkpos, chunkptr);
                 if (!meshptr) {
                     continue;

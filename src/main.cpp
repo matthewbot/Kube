@@ -1,4 +1,5 @@
 #include "Lua.h"
+#include "Block.h"
 #include "IOServiceThreads.h"
 #include "gfx/Shader.h"
 #include "gfx/Buffer.h"
@@ -27,45 +28,48 @@
 
 const float pi = static_cast<float>(M_PI);
 
-struct TestWorldBlocks {
-    BlockType stone;
-    BlockType dirt;
-    BlockType grass;
+void registerBlockTypes(BlockTypeRegistry &types) {
+    BlockTypeInfo stone;
+    stone.setAllFaceTextureNums(3);
+    types.makeType("stone", stone);
 
-    TestWorldBlocks() {
-        stone.setAllFaceTextureNums(3);
+    BlockTypeInfo dirt;
+    dirt.setAllFaceTextureNums(2);
+    types.makeType("dirt", dirt);
 
-        dirt.setAllFaceTextureNums(2);
-
-        grass.setAllFaceTextureNums(0);
-        grass.setFaceTextureNum(Face::TOP, 1);
-        grass.setFaceTextureNum(Face::BOTTOM, 2);    
-    }
-};
+    BlockTypeInfo grass;
+    grass.setAllFaceTextureNums(0);
+    grass.setFaceTextureNum(Face::TOP, 1);
+    grass.setFaceTextureNum(Face::BOTTOM, 2);
+    types.makeType("grass", grass);
+}
 
 class TestWorldGenerator : public WorldGenerator {
 public:
     TestWorldGenerator() : seed(0) { }
 
-    Block generateBlock(glm::vec3 pos) const {
+    bool solid(glm::vec3 pos) const {
         float val = 2*perlin3(pos, seed);
 
-        glm::vec3 threshpos{pos.x/20, pos.y/20, 0};            
+        glm::vec3 threshpos{pos.x/20, pos.y/20, 0};
         float thresh = pos.z + 5*perlin3(threshpos, seed ^ 0x1);
 
-        if (val > thresh) {
-            return blocks.stone;
-        } else {
-            return Block::air();
-        }
+        return val > thresh;
     }
 
-    std::unique_ptr<Chunk> generateChunk(const glm::ivec3 &chunkpos) const {
+    std::unique_ptr<Chunk> generateChunk(
+        const glm::ivec3 &chunkpos,
+        const BlockTypeRegistry &blocktypes) const
+    {
+        const BlockType *grass = blocktypes.getType("grass");
+        const BlockType *dirt = blocktypes.getType("dirt");
+        const BlockType *stone = blocktypes.getType("stone");
+
         std::unique_ptr<Chunk> chunk{new Chunk{}};
 
         for (auto i = begin(*chunk); i != end(*chunk); ++i) {
             glm::vec3 pos = glm::vec3{chunkpos} + glm::vec3{i.getPos()}/32.0f;
-            *i = generateBlock(pos);
+            *i = solid(pos) ? *stone : Block::air();
         }
 
         for (int x=0; x<Chunk::XSize; x++) {
@@ -75,16 +79,16 @@ public:
                 glm::vec3 pos_above{chunkpos.x + x/32.0f,
                                     chunkpos.y + y/32.0f,
                                     chunkpos.z+1};
-                if (!generateBlock(pos_above).isAir())
+                if (solid(pos_above))
                     continue;
 
                 for (int z=Chunk::ZSize-1; z>=0; z--) {
                     Block &b = (*chunk)[glm::ivec3{x, y, z}];
-                    if (&b.getType() == &blocks.stone) {
+                    if (&b.getType() == stone) {
                         if (ctr == 0) {
-                            b = blocks.grass;
+                            b = *grass;
                         } else {
-                            b = blocks.dirt;
+                            b = *dirt;
                         }
 
                         if (++ctr >= 3) {
@@ -97,23 +101,23 @@ public:
 
         return chunk;
     }
-    
+
     void reseed(int seed) { this->seed = seed; }
 
-    const TestWorldBlocks &getBlocks() const { return blocks; }
-    
 private:
     int seed;
-    TestWorldBlocks blocks;
 };
 
 int main(int argc, char **argv) {
     Lua lua;
     lua.runFile("game.lua");
 
+    BlockTypeRegistry blocktypes;
+    registerBlockTypes(blocktypes);
+
     IOServiceThreads threads{4};
     TestWorldGenerator gen;
-    World world(gen, threads);
+    World world(blocktypes, gen, threads);
 
     auto regenWorld = [&]() {
         world.getChunks().clearAllChunks();
@@ -123,13 +127,13 @@ int main(int argc, char **argv) {
 
     GraphicsSystem gfx{world, threads};
     gfx.getCamera().pos.z = 40;
-    
+
     RPYCameraManipulator camera_manipulator{.002, 5};
 
     gfx.setInputCallback([&]() {
         Window &window = gfx.getWindow();
         RPYCamera &camera = gfx.getCamera();
-        
+
         if (window.isClosed()) {
             threads.getMainIO().stop();
         }
@@ -161,7 +165,7 @@ int main(int argc, char **argv) {
             glm::ivec3{floorVec(camera.pos)}).first;
 
         static constexpr int range = 8;
-        static constexpr int zrange = 4;        
+        static constexpr int zrange = 4;
         for (int i=0; i<10; i++) {
             glm::ivec3 chunkpos = camera_chunkpos;
             chunkpos.x += (rand() % range) - range/2;
@@ -172,6 +176,6 @@ int main(int argc, char **argv) {
     });
 
     threads.runMain();
-    
+
     return 0;
 }

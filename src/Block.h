@@ -1,22 +1,8 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 
-#include "util.h"
+#include "BlockType.h"
 #include <cstdint>
-#include "util.h"
-
-class BlockType {
-public:
-    BlockType();
-
-    void setFaceTextureNum(Face face, unsigned int texnum) { face_texes[face] = texnum; }
-    void setAllFaceTextureNums(unsigned int texnum);
-
-    unsigned int getFaceTextureNum(Face face) const { return face_texes[face]; }
-
-private:
-    FaceMap<unsigned int> face_texes;
-};
 
 class Block {
 public:
@@ -35,4 +21,3 @@ private:
 };
 
 #endif
-
