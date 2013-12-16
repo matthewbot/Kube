@@ -1,7 +1,7 @@
 #ifndef BLOCKTYPE_H
 #define BLOCKTYPE_H
 
-#include "util.h"
+#include "util/Face.h"
 #include <string>
 #include <cstdint>
 #include <unordered_map>

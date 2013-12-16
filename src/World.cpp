@@ -4,8 +4,8 @@
 World::World(const BlockTypeRegistry &blocktypes,
 	     const WorldGenerator &chunkgen,
              IOServiceThreads &threads) :
-    chunkgen(chunkgen),
     blocktypes(blocktypes),
+    chunkgen(chunkgen),
     threads(threads) { }
 
 void World::asyncGenerateChunk(const glm::ivec3 &pos) {

@@ -1,7 +1,7 @@
 #ifndef TEST_BUFFER_H
 #define TEST_BUFFER_H
 
-#include "util.h"
+#include "util/IDBase.h"
 
 #include <vector>
 #include <cstdlib>

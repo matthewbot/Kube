@@ -1,4 +1,4 @@
-#include "util.h"
+#include "Face.h"
 
 const std::array<Face, 6> all_faces = {
     Face::RIGHT, Face::LEFT, Face::BACK, Face::FRONT, Face::TOP, Face::BOTTOM

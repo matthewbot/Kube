@@ -4,6 +4,7 @@
 #include "IOServiceThreads.h"
 #include "Chunk.h"
 #include "Mesh.h"
+#include "util/math.h"
 
 #include <vector>
 #include <utility>

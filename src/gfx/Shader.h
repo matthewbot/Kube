@@ -1,7 +1,7 @@
 #ifndef TEST_SHADER_H
 #define TEST_SHADER_H
 
-#include "util.h"
+#include "util/IDBase.h"
 
 #include <glm/glm.hpp>
 

@@ -1,7 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "util.h"
+#include "util/math.h"
 #include "gfx/Texture.h"
 #include "gfx/Window.h"
 #include "gfx/Shader.h"

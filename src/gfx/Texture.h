@@ -2,7 +2,7 @@
 #define TEXTURE_H
 
 #include "gfx/Image.h"
-#include "util.h"
+#include "util/IDBase.h"
 
 #include <GL/glew.h>
 
