@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-ChunkMeshManager::ChunkMeshManager(IOServiceThreads &threads) :
-    threads(threads) { }
+ChunkMeshManager::ChunkMeshManager(ThreadManager &tm) :
+    tm(tm) { }
 
 const Mesh *ChunkMeshManager::getMesh(const glm::ivec3 &pos) const {
     // updateMesh doesn't modify anything if chunk is empty
@@ -45,11 +45,11 @@ void ChunkMeshManager::asyncGenerateMesh(const glm::ivec3 &pos,
         return;
     meshgen_pending.insert(chunk);
 
-    threads.postWork([=, chunk = std::move(chunk)]() {
+    tm.postWork([=, chunk = std::move(chunk)]() {
         MeshBuilder builder = chunk->tesselate();
-        threads.postMain([=,
-                          chunk = std::move(chunk),
-                          builder = std::move(builder)]() {
+        tm.postMain([=,
+		     chunk = std::move(chunk),
+		     builder = std::move(builder)]() {
             std::cout << "Uploading mesh at "
                       << pos.x << ","
                       << pos.y << std::endl;

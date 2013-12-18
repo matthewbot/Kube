@@ -6,11 +6,11 @@
 static const auto rate = boost::posix_time::seconds(1/60.0);
 
 GraphicsSystem::GraphicsSystem(const World &world,
-                               IOServiceThreads &threads) :
+                               ThreadManager &tm) :
     world(world),
-    timer(threads.getMainIO(), rate),
+    tm(tm),
     window(800, 600),
-    chunkmeshes(threads)
+    chunkmeshes(tm)
 {
     Shader vert3d{Shader::Type::VERTEX, "vert.glsl"};
     Shader frag3d{Shader::Type::FRAGMENT, "frag.glsl"};
@@ -24,8 +24,16 @@ GraphicsSystem::GraphicsSystem(const World &world,
     sampler.setFilter(Sampler::NEAREST);
     
     font.load("font.fnt");
+}
 
-    waitTimer();
+void GraphicsSystem::runRenderLoop(std::function<bool ()> input_callback) {
+    do {
+	if (!input_callback()) {
+	    break;
+	}
+	renderFrame();
+    } while (tm.runMain(std::chrono::duration_cast<std::chrono::milliseconds>(
+			    std::chrono::duration<double>(1.0/60.0))));
 }
 
 PerspectiveProjection GraphicsSystem::getPerspectiveProjection() {
@@ -90,19 +98,4 @@ void GraphicsSystem::renderText() {
     renderer.render(glm::mat4{1}, fontmesh);
     glEnable(GL_DEPTH_TEST);    
     window.swapBuffers();
-}
-
-void GraphicsSystem::waitTimer() {
-    timer.async_wait([this](const boost::system::error_code &error) {
-        if (error) {
-            return;
-        }
-
-        if (input_callback) {
-            input_callback();
-        }
-        renderFrame();
-        timer.expires_at(timer.expires_at() + rate);
-        waitTimer();
-    });
 }

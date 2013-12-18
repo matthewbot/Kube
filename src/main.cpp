@@ -1,6 +1,6 @@
 #include "Lua.h"
 #include "Block.h"
-#include "IOServiceThreads.h"
+#include "util/ThreadManager.h"
 #include "gfx/Shader.h"
 #include "gfx/Buffer.h"
 #include "gfx/GraphicsSystem.h"
@@ -15,7 +15,6 @@
 #include <unistd.h>
 #include <iostream>
 #include <tuple>
-#include <boost/asio.hpp>
 #include <chrono>
 #include <random>
 #include <thread>
@@ -109,15 +108,16 @@ private:
 };
 
 int main(int argc, char **argv) {
+    ThreadManager tm;
+
     Lua lua;
     lua.runFile("game.lua");
 
     BlockTypeRegistry blocktypes;
     registerBlockTypes(blocktypes);
 
-    IOServiceThreads threads{4};
     TestWorldGenerator gen;
-    World world(blocktypes, gen, threads);
+    World world(blocktypes, gen, tm);
 
     auto regenWorld = [&]() {
         world.getChunks().clearAllChunks();
@@ -125,17 +125,18 @@ int main(int argc, char **argv) {
     };
     regenWorld();
 
-    GraphicsSystem gfx{world, threads};
+    GraphicsSystem gfx{world, tm};
     gfx.getCamera().pos.z = 40;
 
     RPYCameraManipulator camera_manipulator{.002, 5};
 
-    gfx.setInputCallback([&]() {
+    // TODO
+    gfx.runRenderLoop([&]() -> bool {
         Window &window = gfx.getWindow();
         RPYCamera &camera = gfx.getCamera();
 
         if (window.isClosed()) {
-            threads.getMainIO().stop();
+	    return false;
         }
 
         camera_manipulator.update(camera, window, 1/50.0);
@@ -173,9 +174,9 @@ int main(int argc, char **argv) {
             chunkpos.z = (rand() % zrange) - zrange/2;
             world.asyncGenerateChunk(chunkpos);
         }
-    });
 
-    threads.runMain();
+	return true;
+    });
 
     return 0;
 }

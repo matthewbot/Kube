@@ -1,7 +1,7 @@
 #ifndef CHUNKMESHMANAGER_H
 #define CHUNKMESHMANAGER_H
 
-#include "IOServiceThreads.h"
+#include "util/ThreadManager.h"
 #include "Chunk.h"
 #include "Mesh.h"
 #include "util/math.h"
@@ -14,7 +14,7 @@
 
 class ChunkMeshManager {
 public:
-    ChunkMeshManager(IOServiceThreads &threads);
+    ChunkMeshManager(ThreadManager &tm);
 
     const Mesh *getMesh(const glm::ivec3 &pos) const;
     const Mesh *updateMesh(const glm::ivec3 &pos,
@@ -23,7 +23,7 @@ public:
     void freeUnusedMeshes();
     
 private:
-    IOServiceThreads &threads;
+    ThreadManager &tm;
 
     void asyncGenerateMesh(const glm::ivec3 &pos,
                            std::shared_ptr<const Chunk> chunk);

@@ -4,7 +4,7 @@
 #include "ChunkGrid.h"
 #include "Block.h"
 #include "WorldGenerator.h"
-#include "IOServiceThreads.h"
+#include "util/ThreadManager.h"
 
 #include <boost/asio.hpp>
 #include <unordered_set>
@@ -14,7 +14,7 @@ class World {
 public:
     World(const BlockTypeRegistry &blocktypes,
 	  const WorldGenerator &chunkgen,
-          IOServiceThreads &threads);
+          ThreadManager &tm);
 
     ChunkGrid &getChunks() { return grid; }
     const ChunkGrid &getChunks() const { return grid; }
@@ -29,7 +29,7 @@ private:
     const WorldGenerator &chunkgen;
     std::unordered_set<glm::ivec3> chunkgen_pending;
 
-    IOServiceThreads &threads;
+    ThreadManager &tm;
 };
 
 #endif
