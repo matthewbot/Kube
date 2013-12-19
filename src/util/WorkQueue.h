@@ -35,7 +35,9 @@ private:
 	}
     };
     std::vector<Item> item_heap;
-    bool stop_flag;    
+    bool stop_flag;
+
+    void runItemWithoutLock(std::unique_lock<std::mutex> &lock);
 };
 
 #endif

@@ -28,22 +28,15 @@ void WorkQueue::stop() {
 }
 
 void WorkQueue::runAllWork() {
-    std::unique_lock<std::mutex> lock{mutex, std::defer_lock};
+    std::unique_lock<std::mutex> lock{mutex};
     while (true) {
-	lock.lock();
 	cond.wait(lock, [=]{ return stop_flag || !item_heap.empty(); });
 
 	if (stop_flag) {
 	    return;
 	}
 
-	Item item = std::move(item_heap.front());
-	std::pop_heap(std::begin(item_heap), std::end(item_heap));
-	item_heap.pop_back();
-	lock.unlock();
-	
-	assert(item.func);
-	item.func();
+	runItemWithoutLock(lock);
     }
 }
 
@@ -51,9 +44,8 @@ void WorkQueue::runAllWork() {
 bool WorkQueue::runSomeWork(std::chrono::milliseconds time) {
     auto stop_time = std::chrono::steady_clock::now() + time;
     
-    std::unique_lock<std::mutex> lock{mutex, std::defer_lock};
+    std::unique_lock<std::mutex> lock{mutex};
     while (true) {
-	lock.lock();
 	bool timeout = !cond.wait_until(lock, stop_time,
 					[=]{ return stop_flag || !item_heap.empty(); });
 	if (timeout) {
@@ -64,12 +56,16 @@ bool WorkQueue::runSomeWork(std::chrono::milliseconds time) {
 	    return false;
 	}
 
-	Item item = std::move(item_heap.front());
-	std::pop_heap(std::begin(item_heap), std::end(item_heap));
-	item_heap.pop_back();
-	lock.unlock();
-
-	assert(item.func);
-	item.func();
+	runItemWithoutLock(lock);
     }
+}
+
+void WorkQueue::runItemWithoutLock(std::unique_lock<std::mutex> &lock) {
+    Item item = std::move(item_heap.front());
+    std::pop_heap(std::begin(item_heap), std::end(item_heap));
+    item_heap.pop_back();
+
+    lock.unlock();
+    item.func();
+    lock.lock();
 }
