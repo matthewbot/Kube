@@ -9,6 +9,17 @@ void ThreadManager::postWork(std::function<void ()> func, int priority) {
     getNextThread()->post(std::move(func), priority);
 }
 
+void ThreadManager::postWork(std::function<void (WorkerThread &)> func, int priority) {
+    auto threadptr = getNextThread();
+    threadptr->post(std::bind(std::move(func), std::ref(*threadptr)), priority);
+}
+
+void ThreadManager::postWorkAll(const std::function<void()> &func, int priority) {
+    for (auto &thread : threads) {
+	thread.post(func, priority);
+    }
+}
+
 WorkerThread *ThreadManager::getNextThread() {
     unsigned int num;
     unsigned int next;

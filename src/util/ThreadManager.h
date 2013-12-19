@@ -18,6 +18,8 @@ public:
     }
     
     void postWork(std::function<void ()> func, int priority=0);
+    void postWork(std::function<void (WorkerThread &)> func, int priority=0);
+    void postWorkAll(const std::function<void ()> &func, int priority=0);
     void postMain(std::function<void ()> func, int priority=0) {
 	main.post(std::move(func), priority);
     }

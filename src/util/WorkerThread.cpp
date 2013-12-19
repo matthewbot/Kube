@@ -1,6 +1,7 @@
 #include "WorkerThread.h"
 
 #include <algorithm>
+#include <functional>
 
 WorkerThread::WorkerThread() :
     thread(&WorkQueue::runAllWork, &queue) { }
