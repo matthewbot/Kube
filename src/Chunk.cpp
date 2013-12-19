@@ -30,8 +30,8 @@ void Chunk::fill(const Block &block) {
     }
 }
 
-MeshBuilder Chunk::tesselate() const {
-    MeshBuilder builder{MeshFormat{3, 3, 3}};
+void Chunk::tesselate(MeshBuilder &builder) const {
+    builder.reset(MeshFormat{3, 3, 3});
 
     for (auto i = begin(*this); i != end(*this); ++i) {
         if (i->isAir()) {
@@ -42,8 +42,6 @@ MeshBuilder Chunk::tesselate() const {
             tesselate_face(builder, i.getPos(), f);
         }
     }
-
-    return builder;
 }
 
 void Chunk::tesselate_face(MeshBuilder &builder, const glm::ivec3 &pos, Face face) const {
@@ -74,12 +72,12 @@ void Chunk::tesselate_face(MeshBuilder &builder, const glm::ivec3 &pos, Face fac
 
     using Idx = MeshBuilder::Index;
 
+    // Todo, can generate most of this with template wizardry
     auto vert = [&](const glm::vec3 &pos, const glm::vec3 &tex) -> Idx {
-        builder.beginVert();
         builder.append(pos);
         builder.append(normal);
         builder.append(tex);
-        return builder.endVert();
+        return builder.finishVert();
     };
 
     Idx a;

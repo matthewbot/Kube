@@ -70,10 +70,9 @@ Mesh Font::tesselate(const std::string &str) const {
     const float texheight = tex.getHeight();
 
     auto vert = [&builder](float x, float y, float tx, float ty) -> MeshBuilder::Index {
-        builder.beginVert();
         builder.append(glm::vec2{x, y});
         builder.append(glm::vec2{tx, ty});
-        return builder.endVert();
+        return builder.finishVert();
     };
 
     int curx = 0;

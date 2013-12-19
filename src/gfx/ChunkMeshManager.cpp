@@ -45,11 +45,11 @@ void ChunkMeshManager::asyncGenerateMesh(const glm::ivec3 &pos,
         return;
     meshgen_pending.insert(chunk);
 
-    tm.postWork([=, chunk = std::move(chunk)]() {
-        MeshBuilder builder = chunk->tesselate();
+    tm.postWork([=, chunk = std::move(chunk)](WorkerThread &wt) {
+        auto &builder = wt.cacheLocal<MeshBuilder>("MeshBuilder");
+        chunk->tesselate(builder);
         tm.postMain([=,
-		     chunk = std::move(chunk),
-		     builder = std::move(builder)]() {
+		     chunk = std::move(chunk)]() {
             std::cout << "Uploading mesh at "
                       << pos.x << ","
                       << pos.y << std::endl;

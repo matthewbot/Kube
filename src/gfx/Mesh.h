@@ -48,10 +48,14 @@ class MeshBuilder {
 public:
     using Index = unsigned int;
 
-    explicit MeshBuilder(const MeshFormat &meshformat);
+    MeshBuilder();
+    explicit MeshBuilder(MeshFormat format) : MeshBuilder() {
+	reset(std::move(format));
+    }
 
-    void beginVert();
-    Index endVert();
+    void reset(MeshFormat format);
+
+    Index finishVert();
     void repeatVert(Index idx);
 
     template <typename T>
@@ -80,7 +84,7 @@ private:
     std::vector<float> buf;
     std::vector<Index> ibuf;
 
-    const MeshFormat format;
+    MeshFormat format;
 };
 
 #endif

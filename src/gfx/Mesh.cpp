@@ -7,14 +7,19 @@ MeshFormat::MeshFormat(const std::initializer_list<unsigned int> &attr_lengths) 
     attr_lengths(attr_lengths),
     vert_size(std::accumulate(begin(attr_lengths), end(attr_lengths), 0)) { }
 
-MeshBuilder::MeshBuilder(const MeshFormat &meshformat) :
+MeshBuilder::MeshBuilder() :
     vert_size(0),
-    next_index(0),
-    format(meshformat) { }
+    next_index(0) { }
 
-void MeshBuilder::beginVert() { }
+void MeshBuilder::reset(MeshFormat format) {
+    this->format = std::move(format);
+    vert_size = 0;
+    next_index = 0;
+    buf.clear();
+    ibuf.clear();
+}
 
-MeshBuilder::Index MeshBuilder::endVert() {
+MeshBuilder::Index MeshBuilder::finishVert() {
     assert(vert_size == format.getVertexSize());
     vert_size = 0;
 
@@ -31,8 +36,8 @@ void MeshBuilder::repeatVert(Index index) {
 Mesh MeshBuilder::build() const {
     return {getVertexCount(),
             format,
-            Buffer{ buf },
-            Buffer{ ibuf, Buffer::ELEMENTS }};
+            Buffer{buf},
+            Buffer{ibuf, Buffer::ELEMENTS}};
 }
 
 Mesh::Mesh(unsigned int vertcount, const MeshFormat &format, Buffer buf_, Buffer ibuf_) :
