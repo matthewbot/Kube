@@ -64,11 +64,13 @@ public:
         const BlockType *dirt = blocktypes.getType("dirt");
         const BlockType *stone = blocktypes.getType("stone");
 
-        std::unique_ptr<Chunk> chunk{new Chunk{}};
+        std::unique_ptr<Chunk> chunk{new Chunk{blocktypes}};
+        chunk->fill(Block::air());
 
-        for (auto i = begin(*chunk); i != end(*chunk); ++i) {
-            glm::vec3 pos = glm::vec3{chunkpos} + glm::vec3{i.getPos()}/32.0f;
-            *i = solid(pos) ? *stone : Block::air();
+        for (auto &pos : ChunkIndex::Range) {
+            glm::vec3 worldpos = static_cast<glm::vec3>(chunkpos) +
+                static_cast<glm::vec3>(pos.getVec())/32.0f;
+            chunk->setBlock(pos, solid(worldpos) ? *stone : Block::air());
         }
 
         for (int x=0; x<Chunk::XSize; x++) {
@@ -82,12 +84,13 @@ public:
                     continue;
 
                 for (int z=Chunk::ZSize-1; z>=0; z--) {
-                    Block &b = (*chunk)[glm::ivec3{x, y, z}];
+                    ChunkIndex idx{x, y, z};
+                    Block b = chunk->getBlock(idx);
                     if (&b.getType() == stone) {
                         if (ctr == 0) {
-                            b = *grass;
+                            chunk->setBlock(idx, Block{*grass});
                         } else {
-                            b = *dirt;
+                            chunk->setBlock(idx, Block{*dirt});
                         }
 
                         if (++ctr >= 3) {
@@ -157,7 +160,7 @@ int main(int argc, char **argv) {
                 std::tie(chunkpos, blockpos) = ChunkGrid::posToChunkBlock(*pick);
                 std::unique_ptr<Chunk> newchunk{
                     new Chunk(*world.getChunks().getChunk(chunkpos))};
-                newchunk->getBlock(blockpos) = Block::air();
+                newchunk->setBlock(ChunkIndex{blockpos}, Block::air());
                 world.getChunks().setChunk(chunkpos, std::move(newchunk));
             }
         }

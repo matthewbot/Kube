@@ -1,8 +1,10 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
-#include "gfx/Mesh.h"
+#include "gfx/Mesh.h" // TODO
+
 #include "Block.h"
+#include "BlockTypeRegistry.h"
 
 #include <boost/optional.hpp>
 
@@ -11,97 +13,92 @@
 #include <vector>
 #include <ostream>
 
+namespace detail {
+    struct ChunkIndexRangeType;
+}
+class Chunk;
+
+class ChunkIndex {
+public:
+    ChunkIndex() : vec{0, 0, 0} { }
+    ChunkIndex(int x, int y, int z) : vec{x, y, z} { }
+    ChunkIndex(glm::ivec3 vec) : vec{vec} { }
+
+    static const detail::ChunkIndexRangeType Range; // TODO lowercase
+    
+    unsigned int getOffset() const;
+    const glm::ivec3 &getVec() const { return vec; }
+    
+    ChunkIndex adjacent(Face face) const { return { adjacentPos(vec, face) }; }
+    boost::optional<Face> sharedFace(const ChunkIndex &other) const {
+        return ::sharedFace(vec, other.vec);
+    }
+
+    bool isValid() const;
+    explicit operator bool() const { return isValid(); }
+
+    void advance();
+    ChunkIndex &operator++() { advance(); return *this; }
+    ChunkIndex operator++(int) { auto tmp = *this; tmp.advance(); return tmp; }
+    bool operator==(const ChunkIndex &other) { return vec == other.vec; }
+    bool operator!=(const ChunkIndex &other) { return vec != other.vec; }
+    
+private:
+    glm::ivec3 vec;
+};
+
 class Chunk {
 public:
     static constexpr int XSize = 32;
     static constexpr int YSize = 32;
     static constexpr int ZSize = 32;
 
-    Chunk() { }
-    explicit Chunk(const Block &block) { fill(block); }
-    static Chunk genRandom(const std::vector<Block> &blocks,
-                           float density);
+    Chunk(const BlockTypeRegistry &reg) : reg(&reg) { }
 
-    static int getOffset(const glm::ivec3 &pos) {
-        return pos.z + ZSize*(pos.y + YSize*pos.x);
-    }
-    static bool isValid(const glm::ivec3 &pos) {
-        return pos.x >= 0 && pos.x < XSize &&
-            pos.y >= 0 && pos.y < YSize &&
-            pos.z >= 0 && pos.z < ZSize;
-    }
-    static glm::ivec3 nextPos(const glm::ivec3 &pos);
+    Block getBlock(unsigned int offset) const;
+    void setBlock(unsigned int offset, const Block &block);
 
-    Block &operator[](const glm::ivec3 &p) { return getBlock(p); }
-    Block &getBlock(const glm::ivec3 &p) { return data[getOffset(p)]; }
-    const Block &operator[](const glm::ivec3 &p) const { return getBlock(p); }
-    const Block &getBlock(const glm::ivec3 &p) const { return data[getOffset(p)]; }
+    Block getBlock(const ChunkIndex &index) const {
+        return getBlock(index.getOffset());
+    }
+
+    void setBlock(const ChunkIndex &index, const Block &block) {
+        setBlock(index.getOffset(), block);
+    }
 
     void fill(const Block &block);
+
+    // TODO move elsewhere (gfx/tesselate.h)
     void tesselate(MeshBuilder &builder) const;
 
-    class iterator {
-        friend iterator begin(Chunk &chunk);
-        friend iterator end(Chunk &chunk);
-    public:
-        iterator &operator++() { pos = nextPos(pos); return *this; }
-        Block &operator*() const { return (*chunk)[pos]; }
-        Block *operator->() const { return &(*chunk)[pos]; }
-
-        bool operator==(const iterator &i) const { return pos == i.pos; }
-        bool operator!=(const iterator &i) const { return pos != i.pos; }
-
-        const glm::ivec3 &getPos() const { return pos; }
-
-    private:
-        iterator(Chunk &chunk, const glm::ivec3 &pos) :
-            chunk(&chunk), pos(pos) { }
-
-        Chunk *chunk;
-        glm::ivec3 pos;
-    };
-
-    class const_iterator {
-        friend const_iterator begin(const Chunk &chunk);
-        friend const_iterator end(const Chunk &chunk);
-    public:
-        const_iterator(const Chunk &chunk, const glm::ivec3 &pos) :
-            chunk(&chunk), pos(pos) { }
-
-        const_iterator &operator++() { pos = nextPos(pos); return *this; }
-        const Block &operator*() const { return (*chunk)[pos]; }
-        const Block *operator->() const { return &(*chunk)[pos]; }
-
-        bool operator==(const const_iterator &i) const { return pos == i.pos; }
-        bool operator!=(const const_iterator &i) const { return pos != i.pos; }
-
-        const glm::ivec3 &getPos() const { return pos; }
-
-    private:
-        const Chunk *chunk;
-        glm::ivec3 pos;
-    };
-
 private:
-    std::array<Block, XSize*YSize*ZSize> data;
+    const BlockTypeRegistry *reg;
+    std::array<BlockType::ID, XSize*YSize*ZSize> data;
 
-    void tesselate_face(MeshBuilder &builder, const glm::ivec3 &pos, Face f) const;
+    void tesselate_face(MeshBuilder &builder, const ChunkIndex &pos, Face f) const;
 };
 
-inline Chunk::iterator begin(Chunk &chunk) {
-    return {chunk, glm::ivec3{0, 0, 0}};
-}
+namespace detail {
+    struct ChunkIndexRangeType { };
 
-inline Chunk::iterator end(Chunk &chunk) {
-    return {chunk, glm::ivec3{0, 0, 32}};
-}
+    struct ChunkIndexIterator {
+        ChunkIndex pos;
 
-inline Chunk::const_iterator begin(const Chunk &chunk) {
-    return {chunk, glm::ivec3{0, 0, 0}};
-}
+        const ChunkIndex &operator*() const { return pos; }
+        const ChunkIndex *operator->() const { return &pos; }
+        ChunkIndexIterator &operator++() { pos.advance(); return *this; }
+        ChunkIndexIterator operator++(int) { auto tmp = *this; ++tmp; return tmp; }
+        bool operator==(const ChunkIndexIterator &other) { return pos == other.pos; }
+        bool operator!=(const ChunkIndexIterator &other) { return pos != other.pos; }
+    };
 
-inline Chunk::const_iterator end(const Chunk &chunk) {
-    return {chunk, glm::ivec3{0, 0, 32}};
-}
+    inline ChunkIndexIterator begin(ChunkIndexRangeType) {
+        return { {0, 0, 0} };
+    }
+    
+    inline ChunkIndexIterator end(ChunkIndexRangeType) {
+        return { {Chunk::XSize, 0, 0} };
+    }
+};
 
 #endif

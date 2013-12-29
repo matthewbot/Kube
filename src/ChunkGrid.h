@@ -18,7 +18,7 @@ public:
     void setChunk(const glm::ivec3 &pos, std::shared_ptr<Chunk> chunk);
     void clearAllChunks();
     
-    const Block *findBlock(glm::ivec3 &pos) const;
+    boost::optional<Block> findBlock(glm::ivec3 &pos) const;
 
     boost::optional<glm::ivec3> pick(const glm::vec3 &pos,
                                      const glm::vec3 &dir,

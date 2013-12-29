@@ -20,15 +20,15 @@ void ChunkGrid::clearAllChunks() {
     chunks.clear();
 }
 
-const Block *ChunkGrid::findBlock(glm::ivec3 &pos) const {
+boost::optional<Block> ChunkGrid::findBlock(glm::ivec3 &pos) const {
     glm::ivec3 chunkpos, blockpos;
     std::tie(chunkpos, blockpos) = posToChunkBlock(pos);
 
     auto maybeChunk = getChunk(chunkpos);
     if (maybeChunk)
-        return &maybeChunk->getBlock(blockpos);
+        return maybeChunk->getBlock(ChunkIndex{blockpos});
     else
-        return nullptr;
+        return boost::none;
 }
 
 boost::optional<glm::ivec3> ChunkGrid::pick(const glm::vec3 &startpos,

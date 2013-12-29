@@ -15,7 +15,8 @@ public:
 
     bool isAir() const { return type == nullptr; }
     const BlockType &getType() const { return *type; }
-
+    BlockType::ID getID() const { return isAir() ? 0 : type->getID(); }
+    
 private:
     const BlockType *type;
 };

@@ -6,54 +6,75 @@
 #include <cassert>
 #include <glm/glm.hpp>
 
-Chunk Chunk::genRandom(const std::vector<Block> &blocks,
-                       float density) {
-    static std::default_random_engine generator;
-    std::uniform_real_distribution<float> choose_air{0, 1};
-    std::uniform_int_distribution<int> choose_block{0, static_cast<int>(blocks.size()-1)};
+const detail::ChunkIndexRangeType ChunkIndex::Range;
 
-    Chunk chunk;
-    for (auto &block : chunk) {
-        if (choose_air(generator) < density) {
-            block = blocks[choose_block(generator)];
-        } else {
-            block = Block::air();
+unsigned int ChunkIndex::getOffset() const {
+    return vec.z + Chunk::ZSize*(vec.y + Chunk::YSize*vec.x);
+}
+
+void ChunkIndex::advance() {
+    vec.z++;
+    if (vec.z >= Chunk::ZSize) {
+        vec.z = 0;
+        vec.y++;
+        if (vec.y >= Chunk::YSize) {
+            vec.y = 0;
+            vec.x++;
         }
     }
+}
 
-    return chunk;
+bool ChunkIndex::isValid() const {
+    return vec.x >= 0 && vec.x < Chunk::XSize &&
+           vec.y >= 0 && vec.y < Chunk::YSize &&
+           vec.z >= 0 && vec.z < Chunk::ZSize;
+}
+
+Block Chunk::getBlock(unsigned int offset) const {
+    assert(offset < data.size());
+    if (data[offset] == 0) {
+        return {};
+    }
+
+    auto typeptr = reg->getType(data[offset]);
+    assert(typeptr);
+    return {*typeptr};
+}
+
+void Chunk::setBlock(unsigned int offset, const Block &block) {
+    assert(offset < data.size());
+    data[offset] = block.getID();
 }
 
 void Chunk::fill(const Block &block) {
-    for (auto &b : *this) {
-        b = block;
-    }
+    data.fill(block.getID());
 }
 
 void Chunk::tesselate(MeshBuilder &builder) const {
     builder.reset(MeshFormat{3, 3, 3});
 
-    for (auto i = begin(*this); i != end(*this); ++i) {
-        if (i->isAir()) {
+    for (auto &pos : ChunkIndex::Range) {
+        // TODO: isVisible() or something
+        if (getBlock(pos).isAir()) {
             continue;
         }
 
         for (Face f : all_faces) {
-            tesselate_face(builder, i.getPos(), f);
+            tesselate_face(builder, pos, f);
         }
     }
 }
 
-void Chunk::tesselate_face(MeshBuilder &builder, const glm::ivec3 &pos, Face face) const {
-    auto adjpos = adjacentPos(pos, face);
-    if (isValid(adjpos) && !getBlock(adjpos).isAir()) {
+void Chunk::tesselate_face(MeshBuilder &builder, const ChunkIndex &pos, Face face) const {
+    auto adjpos = pos.adjacent(face);
+    if (adjpos && !getBlock(adjpos).isAir()) {
         return;
     }
 
-    auto &block = getBlock(pos);
+    auto block = getBlock(pos);
     auto &info = block.getType().getInfo();
 
-    const glm::vec3 bfl{pos};
+    const glm::vec3 bfl{pos.getVec()};
     const glm::vec3 bfr = bfl + glm::vec3{1, 0, 0};
     const glm::vec3 bbl = bfl + glm::vec3{0, 1, 0};
     const glm::vec3 bbr = bfl + glm::vec3{1, 1, 0};
@@ -143,15 +164,5 @@ void Chunk::tesselate_face(MeshBuilder &builder, const glm::ivec3 &pos, Face fac
         vert(bbr, tex_br);
         builder.repeatVert(b);
         break;
-    }
-}
-
-glm::ivec3 Chunk::nextPos(const glm::ivec3 &pos) {
-    if (pos.x+1 < XSize) {
-        return glm::ivec3{pos.x+1, pos.y, pos.z};
-    } else if (pos.y+1 < YSize) {
-        return glm::ivec3{0, pos.y+1, pos.z};
-    } else {
-        return glm::ivec3{0, 0, pos.z+1};
     }
 }
