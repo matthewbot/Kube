@@ -65,10 +65,10 @@ public:
         const glm::ivec3 &chunkpos,
         const BlockTypeRegistry &blocktypes) const
     {
-        const auto &air = *blocktypes.getType("air");
-        const auto &grass = *blocktypes.getType("grass");
-        const auto &dirt = *blocktypes.getType("dirt");
-        const auto &stone = *blocktypes.getType("stone");
+        const auto &air = blocktypes.getType("air");
+        const auto &grass = blocktypes.getType("grass");
+        const auto &dirt = blocktypes.getType("dirt");
+        const auto &stone = blocktypes.getType("stone");
 
         std::unique_ptr<Chunk> chunk{new Chunk{blocktypes}};
         chunk->fill(air);
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
 
     BlockTypeRegistry blocktypes;
     registerBlockTypes(blocktypes);
-    const auto &air = *blocktypes.getType("air");
+    const auto &air = blocktypes.getType("air");
 
     TestWorldGenerator gen;
     World world(blocktypes, gen, tm);

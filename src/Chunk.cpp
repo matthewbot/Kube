@@ -32,9 +32,7 @@ bool ChunkIndex::isValid() const {
 
 Block Chunk::getBlock(unsigned int offset) const {
     assert(offset < data.size());
-    auto typeptr = reg->getType(data[offset]);
-    assert(typeptr);
-    return {*typeptr};
+    return reg->getType(data[offset]);
 }
 
 void Chunk::setBlock(unsigned int offset, const Block &block) {
