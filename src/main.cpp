@@ -28,18 +28,23 @@
 const float pi = static_cast<float>(M_PI);
 
 void registerBlockTypes(BlockTypeRegistry &types) {
+    BlockTypeInfo air;
+    air.visible = false;
+    air.solid = false;
+    types.makeType("air", air);
+    
     BlockTypeInfo stone;
-    stone.setAllFaceTextureNums(3);
+    stone.face_texes.fill(3);
     types.makeType("stone", stone);
 
     BlockTypeInfo dirt;
-    dirt.setAllFaceTextureNums(2);
+    dirt.face_texes.fill(2);
     types.makeType("dirt", dirt);
 
     BlockTypeInfo grass;
-    grass.setAllFaceTextureNums(0);
-    grass.setFaceTextureNum(Face::TOP, 1);
-    grass.setFaceTextureNum(Face::BOTTOM, 2);
+    grass.face_texes.fill(0);
+    grass.face_texes[Face::TOP] = 1;
+    grass.face_texes[Face::BOTTOM] = 2;
     types.makeType("grass", grass);
 }
 
@@ -60,17 +65,18 @@ public:
         const glm::ivec3 &chunkpos,
         const BlockTypeRegistry &blocktypes) const
     {
-        const BlockType *grass = blocktypes.getType("grass");
-        const BlockType *dirt = blocktypes.getType("dirt");
-        const BlockType *stone = blocktypes.getType("stone");
+        const auto &air = *blocktypes.getType("air");
+        const auto &grass = *blocktypes.getType("grass");
+        const auto &dirt = *blocktypes.getType("dirt");
+        const auto &stone = *blocktypes.getType("stone");
 
         std::unique_ptr<Chunk> chunk{new Chunk{blocktypes}};
-        chunk->fill(Block::air());
+        chunk->fill(air);
 
         for (auto &pos : ChunkIndex::Range) {
             glm::vec3 worldpos = static_cast<glm::vec3>(chunkpos) +
                 static_cast<glm::vec3>(pos.getVec())/32.0f;
-            chunk->setBlock(pos, solid(worldpos) ? *stone : Block::air());
+            chunk->setBlock(pos, solid(worldpos) ? stone : air);
         }
 
         for (int x=0; x<Chunk::XSize; x++) {
@@ -85,12 +91,12 @@ public:
 
                 for (int z=Chunk::ZSize-1; z>=0; z--) {
                     ChunkIndex idx{x, y, z};
-                    Block b = chunk->getBlock(idx);
-                    if (&b.getType() == stone) {
+                    auto b = chunk->getBlock(idx);
+                    if (b.getType() == stone) {
                         if (ctr == 0) {
-                            chunk->setBlock(idx, Block{*grass});
+                            chunk->setBlock(idx, grass);
                         } else {
-                            chunk->setBlock(idx, Block{*dirt});
+                            chunk->setBlock(idx, dirt);
                         }
 
                         if (++ctr >= 3) {
@@ -118,6 +124,7 @@ int main(int argc, char **argv) {
 
     BlockTypeRegistry blocktypes;
     registerBlockTypes(blocktypes);
+    const auto &air = *blocktypes.getType("air");
 
     TestWorldGenerator gen;
     World world(blocktypes, gen, tm);
@@ -160,7 +167,7 @@ int main(int argc, char **argv) {
                 std::tie(chunkpos, blockpos) = ChunkGrid::posToChunkBlock(*pick);
                 std::unique_ptr<Chunk> newchunk{
                     new Chunk(*world.getChunks().getChunk(chunkpos))};
-                newchunk->setBlock(ChunkIndex{blockpos}, Block::air());
+                newchunk->setBlock(ChunkIndex{blockpos}, air);
                 world.getChunks().setChunk(chunkpos, std::move(newchunk));
             }
         }

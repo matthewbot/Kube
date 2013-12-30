@@ -17,6 +17,8 @@ public:
     T &operator[](Face face) { return data[static_cast<int>(face)]; }
     const T &operator[](Face face) const { return data[static_cast<int>(face)]; };
 
+    void fill(const T &t) { data.fill(t); }
+    
 private:
     std::array<T, 6> data;
 };

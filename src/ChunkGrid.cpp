@@ -40,7 +40,7 @@ boost::optional<glm::ivec3> ChunkGrid::pick(const glm::vec3 &startpos,
     while (range >= 0) {
         glm::ivec3 ipos = static_cast<glm::ivec3>(floorVec(pos));
         auto optblock = findBlock(ipos);
-        if (optblock && !optblock->isAir()) {
+        if (optblock && optblock->getType().visible) {
             return ipos;
         }
 

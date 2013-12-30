@@ -6,34 +6,24 @@
 #include <cstdint>
 #include <unordered_map>
 
-class BlockTypeInfo {
-public:
-    void setFaceTextureNum(Face face, unsigned int texnum) { face_texes[face] = texnum; }
-    void setAllFaceTextureNums(unsigned int texnum);
-
-    unsigned int getFaceTextureNum(Face face) const { return face_texes[face]; }
-
-private:
+struct BlockTypeInfo {
+    bool solid = true;
+    bool visible = true;
     FaceMap<unsigned int> face_texes;
 };
 
-class BlockType {
-public:
+struct BlockType : public BlockTypeInfo {
     using ID = uint16_t;
-
-    BlockType(ID id, std::string name, BlockTypeInfo info) :
-        id(id),
-        name(std::move(name)),
-        info(std::move(info)) { }
-    
-    ID getID() const { return id; }
-    const std::string &getName() const { return name; }
-    const BlockTypeInfo &getInfo() const { return info; }
-
-private:
     ID id;
     std::string name;
-    BlockTypeInfo info;
+
+    BlockType(ID id, std::string name, BlockTypeInfo info) :
+        BlockTypeInfo(std::move(info)),
+        id(id),
+        name(std::move(name)) { }
+
+    bool operator==(const BlockType &other) const { return id == other.id; }
+    bool operator!=(const BlockType &other) const { return id != other.id; }
 };
 
 #endif

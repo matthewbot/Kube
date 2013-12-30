@@ -7,15 +7,12 @@
 class Block {
 public:
     Block(const BlockType &type) : type(&type) { }
-    Block() : type(nullptr) { }
-    static Block air() { return Block(); }
 
-    bool operator==(const Block &block) { return type == block.type; }
+    bool operator==(const Block &block) { return *type == *block.type; }
     bool operator!=(const Block &block) { return !(*this == block); }
 
-    bool isAir() const { return type == nullptr; }
     const BlockType &getType() const { return *type; }
-    BlockType::ID getID() const { return isAir() ? 0 : type->getID(); }
+    BlockType::ID getID() const { return type->id; }
     
 private:
     const BlockType *type;

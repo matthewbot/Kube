@@ -32,10 +32,6 @@ bool ChunkIndex::isValid() const {
 
 Block Chunk::getBlock(unsigned int offset) const {
     assert(offset < data.size());
-    if (data[offset] == 0) {
-        return {};
-    }
-
     auto typeptr = reg->getType(data[offset]);
     assert(typeptr);
     return {*typeptr};
@@ -54,8 +50,7 @@ void Chunk::tesselate(MeshBuilder &builder) const {
     builder.reset(MeshFormat{3, 3, 3});
 
     for (auto &pos : ChunkIndex::Range) {
-        // TODO: isVisible() or something
-        if (getBlock(pos).isAir()) {
+        if (!getBlock(pos).getType().visible) {
             continue;
         }
 
@@ -66,13 +61,15 @@ void Chunk::tesselate(MeshBuilder &builder) const {
 }
 
 void Chunk::tesselate_face(MeshBuilder &builder, const ChunkIndex &pos, Face face) const {
-    auto adjpos = pos.adjacent(face);
-    if (adjpos && !getBlock(adjpos).isAir()) {
-        return;
-    }
-
     auto block = getBlock(pos);
-    auto &info = block.getType().getInfo();
+    auto &type = block.getType();
+
+    if (type.solid) {
+        auto adjpos = pos.adjacent(face);
+        if (adjpos && getBlock(adjpos).getType().solid) {
+            return;
+        }
+    }
 
     const glm::vec3 bfl{pos.getVec()};
     const glm::vec3 bfr = bfl + glm::vec3{1, 0, 0};
@@ -83,7 +80,7 @@ void Chunk::tesselate_face(MeshBuilder &builder, const ChunkIndex &pos, Face fac
     const glm::vec3 tbl = bfl + glm::vec3{0, 1, 1};
     const glm::vec3 tbr = bfl + glm::vec3{1, 1, 1};
 
-    const unsigned int texnum = info.getFaceTextureNum(face);
+    const unsigned int texnum = type.face_texes[face];
     const glm::vec3 tex_bl{0, 0, texnum};
     const glm::vec3 tex_br{1, 0, texnum};
     const glm::vec3 tex_tl{0, 1, texnum};
