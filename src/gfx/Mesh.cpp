@@ -33,6 +33,35 @@ void MeshBuilder::repeatVert(Index index) {
     ibuf.push_back(index);
 }
 
+void MeshBuilder::append(float f) {
+    buf.push_back(f);
+    vert_size++;
+}
+
+void MeshBuilder::append(const glm::vec2 &vec) {
+    auto pos = buf.size();
+    buf.resize(pos+2);
+    buf[pos] = vec.x;
+    buf[pos+1] = vec.y;
+}
+
+void MeshBuilder::append(const glm::vec3 &vec) {
+    auto pos = buf.size();
+    buf.resize(pos+3);
+    buf[pos] = vec.x;
+    buf[pos+1] = vec.y;
+    buf[pos+2] = vec.z;
+}
+
+void MeshBuilder::append(const glm::vec4 &vec) {
+    auto pos = buf.size();
+    buf.resize(pos+4);
+    buf[pos] = vec.x;
+    buf[pos+1] = vec.y;
+    buf[pos+2] = vec.z;
+    buf[pos+3] = vec.w;
+}
+
 Mesh MeshBuilder::build() const {
     return {getVertexCount(),
             format,

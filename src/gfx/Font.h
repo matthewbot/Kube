@@ -14,12 +14,8 @@ public:
     explicit Font(const std::string &filename) { load(filename); }
 
     void load(const std::string &filename);
-    
-    const Texture &getTexture() const { return tex; }
-    Mesh tesselate(const std::string &str) const;
-    
-private:
-    struct CharProp {
+
+    struct CharProps {
         unsigned int x;
         unsigned int y;
         unsigned int width;
@@ -29,13 +25,21 @@ private:
         int xadvance;
     };
 
-    std::unordered_map<unsigned int, CharProp> charprops;
+    const CharProps *getProps(unsigned int ch) const;
+    const Texture &getTexture() const { return tex; }
+    unsigned int getLineHeight() const { return line_height; }
+    unsigned int getBaseHeight() const { return base_height; }
+    
+private:
+    std::unordered_map<unsigned int, CharProps> charprops;
     Texture tex;
     unsigned int line_height;
     unsigned int base_height;
     
-    using ParsedLine =
-        std::unordered_map<std::string, std::string>;
+    struct ParsedLine {
+        std::string type;
+        std::unordered_map<std::string, std::string> keyvals;
+    };
     static void parseLine(const std::string &line, ParsedLine &result);
 };
 

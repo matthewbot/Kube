@@ -64,11 +64,23 @@ public:
             append(val);
     }
 
-    void append(float f) { buf.push_back(f); vert_size++; }
-    void append(const glm::vec2 &vec) { buf.push_back(vec.x); buf.push_back(vec.y); vert_size += 2; }
-    void append(const glm::vec3 &vec) { buf.push_back(vec.x); buf.push_back(vec.y); buf.push_back(vec.z); vert_size += 3; }
-    void append(const glm::vec4 &vec) { buf.push_back(vec.x); buf.push_back(vec.y); buf.push_back(vec.z); buf.push_back(vec.w); vert_size += 4; }
+    void append(float f);
+    void append(const glm::vec2 &vec);
+    void append(const glm::vec3 &vec);
+    void append(const glm::vec4 &vec);
 
+    template <typename Val>
+    Index makeVert(const Val &val) {
+        append(val);
+        return finishVert();
+    }
+    
+    template <typename Val, typename... Vals>
+    Index makeVert(const Val &val, const Vals&... vals) {
+        append(val);
+        return makeVert(vals...);
+    }
+    
     const MeshFormat &getFormat() const { return format; }
     unsigned int getVertexCount() const { return ibuf.size(); }
 

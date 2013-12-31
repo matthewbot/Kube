@@ -4,6 +4,12 @@ const std::array<Face, 6> all_faces = {
     Face::RIGHT, Face::LEFT, Face::BACK, Face::FRONT, Face::TOP, Face::BOTTOM
 };
 
+const std::array<glm::vec3, 6> face_normals = {
+    glm::vec3{1, 0, 0}, glm::vec3{-1, 0, 0},
+    glm::vec3{0, 1, 0}, glm::vec3{0, -1, 0},
+    glm::vec3{0, 0, 1}, glm::vec3{0, 0, -1}
+};
+
 boost::optional<Face> sharedFace(const glm::ivec3 &a, const glm::ivec3 &b) {
     glm::ivec3 d = a - b;
 

@@ -1,4 +1,5 @@
 #include "gfx/GraphicsSystem.h"
+#include "gfx/tesselate.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <boost/bind.hpp>
@@ -88,7 +89,9 @@ void GraphicsSystem::renderText() {
     buf << "X: " << static_cast<int>(camera.pos.x) << ' '
         << "Y: " << static_cast<int>(camera.pos.y) << ' '
         << "Z: " << static_cast<int>(camera.pos.z);
-    fontmesh = font.tesselate(buf.str());
+    MeshBuilder builder;
+    tesselate(builder, font, buf.str());
+    fontmesh = builder.build();
     
     renderer.setProjection(getOrthoProjection());
     renderer.clearCamera();

@@ -1,5 +1,5 @@
 #include "ChunkMeshManager.h"
-
+#include "tesselate.h"
 #include <iostream>
 
 ChunkMeshManager::ChunkMeshManager(ThreadManager &tm) :
@@ -47,7 +47,7 @@ void ChunkMeshManager::asyncGenerateMesh(const glm::ivec3 &pos,
 
     tm.postWork([=, chunk = std::move(chunk)](WorkerThread &wt) {
         auto &builder = wt.cacheLocal<MeshBuilder>("MeshBuilder");
-        chunk->tesselate(builder);
+        tesselate(builder, *chunk);
         tm.postMain([=,
 		     chunk = std::move(chunk)]() {
             std::cout << "Uploading mesh at "
