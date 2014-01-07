@@ -1,4 +1,4 @@
-#include "Lua.h"
+#include "lua/Lua.h"
 #include "Block.h"
 #include "util/ThreadManager.h"
 #include "gfx/Shader.h"
@@ -119,9 +119,12 @@ private:
 int main(int argc, char **argv) {
     ThreadManager tm;
 
-    Lua lua;
-    lua.runFile("game.lua");
-
+    tm.postWorkAll([](WorkerThread &th) {
+        auto &lua = th.cacheLocal<Lua>("lua");
+        lua.doFile("game.lua");
+        lua.call("test");
+    });
+    
     BlockTypeRegistry blocktypes;
     registerBlockTypes(blocktypes);
     const auto &air = blocktypes.getType("air");

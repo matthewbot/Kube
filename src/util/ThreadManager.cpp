@@ -20,6 +20,12 @@ void ThreadManager::postWorkAll(const std::function<void()> &func, int priority)
     }
 }
 
+void ThreadManager::postWorkAll(const std::function<void (WorkerThread &)> &func, int priority) {
+    for (auto &thread : threads) {
+	thread.post(std::bind(func, std::ref(thread)), priority);
+    }
+}
+
 WorkerThread *ThreadManager::getNextThread() {
     unsigned int num;
     unsigned int next;
