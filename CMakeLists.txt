@@ -3,7 +3,7 @@ project(HELLO)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-add_definitions(-std=gnu++0x -Wall)
+add_definitions(-std=c++11 -Wall)
 
 find_package(Boost COMPONENTS system REQUIRED)
 include_directories(${BOOST_INCLUDE_DIR})

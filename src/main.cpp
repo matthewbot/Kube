@@ -1,4 +1,5 @@
 #include "lua/Lua.h"
+#include "lua/bindings.h"
 #include "Block.h"
 #include "util/ThreadManager.h"
 #include "gfx/Shader.h"
@@ -116,15 +117,34 @@ private:
     int seed;
 };
 
+static void buildMetaTables(Lua &lua) {
+    MetatableBuilder<FaceMap<unsigned int>>(lua, "FaceMapUInt")
+        .rwindex<Face, unsigned int>();
+    
+    MetatableBuilder<BlockTypeInfo>(lua, "BlockTypeInfo")
+        .constructor("new")
+        .field("solid", &BlockTypeInfo::solid)
+        .field("visible", &BlockTypeInfo::visible)
+        .field("face_texes", &BlockTypeInfo::face_texes);
+     
+    MetatableBuilder<BlockTypeRegistry>(lua, "BlockTypeRegistry")
+        .function("makeType", &BlockTypeRegistry::makeType);
+}
+
 int main(int argc, char **argv) {
     ThreadManager tm;
 
     tm.postWorkAll([](WorkerThread &th) {
         auto &lua = th.cacheLocal<Lua>("lua");
+        buildMetaTables(lua);
         lua.doFile("game.lua");
-        lua.call("test");
     });
-    
+
+    tm.postWork([](WorkerThread &th) {
+        auto &lua = th.cacheLocal<Lua>("lua");
+        callLua<void ()>(lua, "test");
+    });
+
     BlockTypeRegistry blocktypes;
     registerBlockTypes(blocktypes);
     const auto &air = blocktypes.getType("air");

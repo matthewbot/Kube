@@ -24,6 +24,8 @@ public:
     void call(const std::string &funcname);
 
     Lua &operator=(const Lua &) = delete;
+
+    operator lua_State *() { return L; }
     
 private:
     lua_State *L;
