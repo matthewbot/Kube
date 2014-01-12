@@ -27,6 +27,11 @@ void WorkQueue::stop() {
     cond.notify_all();
 }
 
+void WorkQueue::sync() const {
+    std::unique_lock<std::mutex> lock{mutex};
+    cond.wait(lock, [=]{ return item_heap.empty(); });
+}
+
 void WorkQueue::runAllWork() {
     std::unique_lock<std::mutex> lock{mutex};
     while (true) {
@@ -40,7 +45,6 @@ void WorkQueue::runAllWork() {
     }
 }
 
-// TODO unify with runAllWork
 bool WorkQueue::runSomeWork(std::chrono::milliseconds time) {
     auto stop_time = std::chrono::steady_clock::now() + time;
     
@@ -66,6 +70,7 @@ void WorkQueue::runItemWithoutLock(std::unique_lock<std::mutex> &lock) {
     item_heap.pop_back();
 
     lock.unlock();
+    cond.notify_all();
     item.func();
     lock.lock();
 }

@@ -17,6 +17,7 @@ public:
     boost::optional<int> getMinimumPriority() const {
 	return queue.getMinimumPriority();
     }
+    void sync() const { queue.sync(); }
 
     template <typename T>
     T *getLocal(const std::string &name) {

@@ -145,6 +145,8 @@ int main(int argc, char **argv) {
         callLua<void ()>(lua, "test");
     });
 
+    tm.syncWork();
+
     BlockTypeRegistry blocktypes;
     registerBlockTypes(blocktypes);
     const auto &air = blocktypes.getType("air");

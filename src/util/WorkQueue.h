@@ -15,6 +15,8 @@ public:
     boost::optional<int> getMinimumPriority() const;
     void stop();
 
+    void sync() const;
+
     void runAllWork();
     bool runSomeWork(std::chrono::milliseconds time);
     

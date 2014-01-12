@@ -26,6 +26,12 @@ void ThreadManager::postWorkAll(const std::function<void (WorkerThread &)> &func
     }
 }
 
+void ThreadManager::syncWork() const {
+    for (auto &thread : threads) {
+        thread.sync();
+    }
+}
+
 WorkerThread *ThreadManager::getNextThread() {
     unsigned int num;
     unsigned int next;

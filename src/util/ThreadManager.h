@@ -24,6 +24,8 @@ public:
     void postMain(std::function<void ()> func, int priority=0) {
 	main.post(std::move(func), priority);
     }
+
+    void syncWork() const;
     
 private:
     std::vector<WorkerThread> threads;
