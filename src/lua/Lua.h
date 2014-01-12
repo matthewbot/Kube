@@ -21,7 +21,6 @@ public:
     ~Lua();
 
     void doFile(const std::string &filename);
-    void call(const std::string &funcname);
 
     Lua &operator=(const Lua &) = delete;
 

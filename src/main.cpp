@@ -1,5 +1,6 @@
 #include "lua/Lua.h"
-#include "lua/bindings.h"
+#include "lua/MetatableBuilder.h"
+#include "lua/call.h"
 #include "Block.h"
 #include "util/ThreadManager.h"
 #include "gfx/Shader.h"
