@@ -8,8 +8,6 @@
 #include <memory>
 #include <boost/variant.hpp>
 
-#include <iostream> // TODO
-
 template <typename T>
 struct IsUserDataPtrType : public std::false_type { };
 
@@ -379,7 +377,6 @@ namespace detail {
     }
 
     inline int metaNewIndex(lua_State *L) {
-        std::cout << "In metaNewIndex" << std::endl;
         if (lua_isstring(L, 2)) {
             std::string key = lua_tostring(L, 2);
             lua_pushstring(L, ("set_" + key).c_str());
@@ -560,7 +557,6 @@ public:
     MetatableBuilder<T> &newindex() {
         lua_getglobal(L, clsname.c_str());
         lua_pushcfunction(L, [](lua_State *L) -> int {
-                std::cout << "In newindex" << std::endl;
             auto objptr = toCType<T *>(L, 1);
             auto &&keyptr = toCType<K>(L, 2);
             auto &&valptr = toCType<V>(L, 3);
@@ -583,6 +579,15 @@ private:
 };
 
 namespace detail {
+    inline int traceback(lua_State *L) {
+        lua_getglobal(L, "debug");
+        lua_getfield(L, -1, "traceback");
+        lua_pushvalue(L, 1);
+        lua_pushinteger(L, 2);
+        lua_call(L, 2, 1);
+        return 1;
+    }
+    
     template <typename Callable>
     struct CallLuaHelper { };
 
@@ -591,10 +596,15 @@ namespace detail {
         template <typename... Ts>
         static void call(lua_State *L, const std::string &name, Ts&&... args) {
             static_assert(sizeof...(Args) == sizeof...(Ts), "Incorrect number of arguments");
-            
+
+            int top = lua_gettop(L);
+            lua_pushcfunction(L, traceback);
             lua_getglobal(L, name.c_str());
             pushAllCType(L, TypeSequence<Args...>(), std::forward<Ts>(args)...);
-            lua_call(L, sizeof...(Args), 0);
+            if (lua_pcall(L, sizeof...(Args), 0, top+1) != 0) {
+                throw std::runtime_error(lua_tostring(L, -1));
+            }
+            lua_pop(L, 1);
         }
     };
     
@@ -603,12 +613,16 @@ namespace detail {
         template <typename... Ts>
         static Ret call(lua_State *L, const std::string &name, Ts&&... args) {
             static_assert(sizeof...(Args) == sizeof...(Ts), "Incorrect number of arguments");
-            
+
+            int top = lua_gettop(L);
+            lua_pushcfunction(L, traceback);
             lua_getglobal(L, name.c_str());
             pushAllCType(L, TypeSequence<Args...>(), std::forward<Ts>(args)...);
-            lua_call(L, sizeof...(Args), 1);
+            if (lua_pcall(L, sizeof...(Args), 1, top+1) != 0) {
+                throw std::runtime_error(lua_tostring(L, -1));
+            }
             Ret val = toCType<Ret>(L, -1);
-            lua_pop(L, 1);
+            lua_pop(L, 2);
             return val;
         }
     };
