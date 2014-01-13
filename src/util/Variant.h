@@ -17,9 +17,10 @@ namespace detail {
     };
 
     template <typename To>
-    struct CurriedConvertible {
+    struct CurriedDecaySame {
         template <typename From>
-        struct templ : public std::is_convertible<From &&, To> { };
+        struct templ : public std::is_same<typename std::decay<To>::type,
+                                           typename std::decay<From>::type> { };
     };
 }
 
@@ -35,6 +36,10 @@ public:
 
     Variant(const Variant<Ts...> &) = delete;
     Variant<Ts...> &operator=(const Variant<Ts...> &) = delete;
+
+    ~Variant() { callDestructor(); }
+
+    size_t getTag() const { return tag; }
     
     template <typename T>
     T *getPtr() {
@@ -45,7 +50,16 @@ public:
         }
     }
 
-    template <typename Result, typename... Callables>
+    template <typename T>
+    const T *getPtr() const {
+        if (tag == TypeToIndex<T, Ts...>::value) {
+            return reinterpret_cast<const T *>(ptr);
+        } else {
+            return nullptr;
+        }
+    }
+    
+    template <typename Result=void, typename... Callables>
     Result match(Callables&&... calls) {
         static_assert(sizeof...(Callables) == sizeof...(Ts),
                       "Incorrect number of callables");
@@ -56,7 +70,8 @@ public:
     template <typename T>
     Variant &operator=(T &&t) {
         callDestructor();
-        callConstructor(std::forward(t));
+        callConstructor(std::forward<T>(t));
+        return *this;
     }
     
 private:
@@ -90,7 +105,7 @@ private:
         if (tag == curtag) {
             reinterpret_cast<T *>(ptr)->~T();
         } else {
-            return callDestructor(size_t_<curtag+1>());
+            return callDestructorHelper(size_t_<curtag+1>());
         }
     }
 
@@ -103,7 +118,7 @@ private:
     template <typename T>
     void callConstructor(T &&t) {
         using TagT = typename FindType<
-            detail::CurriedConvertible<T>::template templ,
+            detail::CurriedDecaySame<T>::template templ,
             Ts...
         >::type;
         tag = TypeToIndex<TagT, Ts...>::value;

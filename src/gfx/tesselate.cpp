@@ -49,7 +49,7 @@ static void tesselate_cube(MeshBuilder &builder,
         const glm::vec3 tex_tl{0, 1, texnum};
         const glm::vec3 tex_tr{1, 1, texnum};
 
-        const auto &normal = faceNormal(face);
+        auto normal = static_cast<glm::vec3>(faceNormal(face));
         MeshBuilder::Index a;
         MeshBuilder::Index b;
 

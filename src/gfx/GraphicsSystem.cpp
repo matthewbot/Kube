@@ -2,9 +2,6 @@
 #include "gfx/tesselate.h"
 
 #include <glm/gtc/matrix_transform.hpp>
-#include <boost/bind.hpp>
-
-static const auto rate = boost::posix_time::seconds(1/60.0);
 
 GraphicsSystem::GraphicsSystem(const World &world,
                                ThreadManager &tm) :

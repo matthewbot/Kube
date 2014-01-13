@@ -46,19 +46,27 @@ struct IndexToType<0, T, Ts...> {
     using type = T;
 };
 
+namespace detail {
+    template <typename, template <typename> class Pred, typename... Ts>
+    struct FindTypeHelper {
+    };
+    
+    template <template <typename> class Pred, typename T, typename... Ts>
+    struct FindTypeHelper<typename std::enable_if<Pred<T>::value>::type,
+                          Pred, T, Ts...> {
+        using type = T;
+    };
+
+    template <template <typename> class Pred, typename T, typename... Ts>
+    struct FindTypeHelper<typename std::enable_if<!Pred<T>::value>::type,
+                          Pred, T, Ts...> {
+        using type = typename FindTypeHelper<void, Pred, Ts...>::type;
+    };
+}
+
 // Finds a type in a type pack satisfying a predicate
 template <template <typename> class Pred, typename... Ts>
-struct FindType {
-    using type = void;
-};
-
-template <template <typename> class Pred, typename T, typename... Ts>
-struct FindType<Pred, T, Ts...> {
-    using type = typename std::conditional<
-        Pred<T>::value,
-        T,
-        typename FindType<Pred, Ts...>::type>::type;
-};
+using FindType = typename detail::FindTypeHelper<void, Pred, Ts...>;
 
 // A compile time list of numbers
 template <size_t... Ns>
