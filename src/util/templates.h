@@ -7,9 +7,58 @@
 
 // General purpose template wizardry collected here.
 
+
+template <size_t N>
+using size_t_ = std::integral_constant<size_t, N>;
+
 // A compile time list of types
+// Useful to delineate multiple type packs in one template.
 template <typename... Ts>
 struct TypeSequence { };
+
+// Determines the index of a type in a type pack
+template <typename A, typename... Ts>
+struct TypeToIndex {
+};
+
+template <typename A, typename T, typename... Ts>
+struct TypeToIndex<A, T, Ts...> {
+    static constexpr size_t value = 1+TypeToIndex<A, Ts...>::value;
+};
+
+template <typename A, typename... Ts>
+struct TypeToIndex<A, A, Ts...> {
+    static constexpr size_t value = 0;
+};
+
+// Gets a type by index from a type pack
+template <size_t N, typename... Ts>
+struct IndexToType {
+};
+
+template <size_t N, typename T, typename... Ts>
+struct IndexToType<N, T, Ts...> {
+    using type = typename IndexToType<N-1, Ts...>::type;
+};
+
+template <typename T, typename... Ts>
+struct IndexToType<0, T, Ts...> {
+    using type = T;
+};
+
+// Finds a type in a type pack satisfying a predicate
+template <template <typename> class Pred, typename... Ts>
+struct FindType {
+    using type = void;
+};
+
+template <template <typename> class Pred, typename T, typename... Ts>
+struct FindType<Pred, T, Ts...> {
+    using type = typename std::conditional<
+        Pred<T>::value,
+        T,
+        typename FindType<Pred, Ts...>::type>::type;
+};
 
 // A compile time list of numbers
 template <size_t... Ns>
@@ -88,6 +137,7 @@ detail::BindMemberFunction<T, MemFn> bindMemberFunction(T &t, MemFn fn) {
     return {t, fn};
 }
 
+// TODO don't really need in MetaTableBuilder anymore
 namespace detail {
     template <typename T>
     struct BindConstructors {
@@ -102,5 +152,7 @@ template <typename T>
 detail::BindConstructors<T> bindConstructors() {
     return {};
 }
+
+
 
 #endif

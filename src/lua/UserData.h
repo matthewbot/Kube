@@ -1,10 +1,11 @@
 #ifndef USERDATA_H
 #define USERDATA_H
 
+#include "util/Variant.h"
+
 #include <lua.hpp>
 #include <type_traits>
 #include <memory>
-#include <boost/variant.hpp>
 
 template <typename T>
 struct IsUserDataPtrType : public std::false_type { };
@@ -24,7 +25,7 @@ struct UserData {
                   "Trying to instantiate UserData for pointer or reference type");
     
     // Userdata can have no ownership, shared ownership, or unique ownership
-    boost::variant<T *, std::shared_ptr<T>, std::unique_ptr<T>> ptr;
+    Variant<T *, std::shared_ptr<T>, std::unique_ptr<T>> ptr;
 
     // Push a pointer type to the stack. 
     template <typename TPtr>
@@ -35,7 +36,7 @@ struct UserData {
         }
         
         void *mem = lua_newuserdata(L, sizeof(UserData<T>));
-        new (mem) UserData{std::forward<TPtr>(ptr)};
+        new (mem) UserData{{std::forward<TPtr>(ptr)}};
         luaL_getmetatable(L, typeid(T).name());
         lua_setmetatable(L, -2);
     }
@@ -48,24 +49,13 @@ struct UserData {
 
         auto &ud = *static_cast<UserData<T> *>(
             luaL_checkudata(L, narg, typeid(T).name()));
-        return boost::get<TPtr>(ud.ptr);
+        auto tptrptr = ud.ptr.template getPtr<TPtr>();
+        if (!tptrptr) {
+            throw std::runtime_error("Converting UserData to wrong pointer type");
+        }
+        return *tptrptr;
     }
 
-private:
-    struct ToPtrVisitor :
-        public boost::static_visitor<T *>
-    {
-        T *operator()(T *&ptr) const {
-            return ptr;
-        }
-        
-        template <typename PtrT>
-        T *operator()(const PtrT &ptr) const {
-            return ptr.get();
-        }
-    };
-
-public:
     // Converts a stack entry to a raw pointer,
     // also checking for nils and giving nullptr
     static T *toPtr(lua_State *L, int narg) {
@@ -75,7 +65,10 @@ public:
 
         auto &ud = *static_cast<UserData<T> *>(
             luaL_checkudata(L, narg, typeid(T).name()));
-        return boost::apply_visitor(ToPtrVisitor(), ud.ptr);
+        return ud.ptr.template match<T *>(
+            [](T *ptr) { return ptr; },
+            [](const std::shared_ptr<T> &ptr) { return ptr.get(); },
+            [](const std::unique_ptr<T> &ptr) { return ptr.get(); });
     }
 
     // Converts a stack entry to a reference,
