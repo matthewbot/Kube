@@ -43,6 +43,7 @@ void MeshBuilder::append(const glm::vec2 &vec) {
     buf.resize(pos+2);
     buf[pos] = vec.x;
     buf[pos+1] = vec.y;
+    vert_size += 2;
 }
 
 void MeshBuilder::append(const glm::vec3 &vec) {
@@ -51,6 +52,7 @@ void MeshBuilder::append(const glm::vec3 &vec) {
     buf[pos] = vec.x;
     buf[pos+1] = vec.y;
     buf[pos+2] = vec.z;
+    vert_size += 3;
 }
 
 void MeshBuilder::append(const glm::vec4 &vec) {
@@ -60,6 +62,7 @@ void MeshBuilder::append(const glm::vec4 &vec) {
     buf[pos+1] = vec.y;
     buf[pos+2] = vec.z;
     buf[pos+3] = vec.w;
+    vert_size += 4;
 }
 
 Mesh MeshBuilder::build() const {
