@@ -3,6 +3,7 @@
 
 #include "BlockType.h"
 #include <string>
+#include <vector>
 
 class BlockTypeRegistry {
 public:

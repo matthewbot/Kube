@@ -60,7 +60,7 @@ bool RPYCameraManipulator::update(RPYCamera &camera, const Window &window, float
             camera.pitch = mouse_down->pitch - (new_mouse_pos.y - mouse_down->pos.y)*scale;
             updated = true;
         } else {
-            mouse_down = boost::none;
+            mouse_down = None;
         }
     }
 

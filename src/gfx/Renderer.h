@@ -2,13 +2,13 @@
 #define CAMERA_H
 
 #include "util/math.h"
+#include "util/Optional.h"
 #include "gfx/Texture.h"
 #include "gfx/Window.h"
 #include "gfx/Shader.h"
 #include "gfx/Mesh.h"
 
 #include <glm/glm.hpp>
-#include <boost/optional.hpp>
 #include <initializer_list>
 
 struct RPYCamera {
@@ -36,7 +36,7 @@ private:
         Radians<float> pitch;
         Radians<float> yaw;
     };
-    boost::optional<DownState> mouse_down;
+    Optional<DownState> mouse_down;
 };
 
 struct PerspectiveProjection {

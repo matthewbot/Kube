@@ -4,7 +4,6 @@
 #include "gfx/Mesh.h"
 #include "gfx/Texture.h"
 
-#include <boost/variant.hpp>
 #include <string>
 #include <unordered_map>
 

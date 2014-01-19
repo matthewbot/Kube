@@ -6,10 +6,6 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -gdwarf-3" CACHE STRING "Flags used by the compile
 
 add_definitions(-std=c++11 -Wall)
 
-find_package(Boost COMPONENTS system REQUIRED)
-include_directories(${BOOST_INCLUDE_DIR})
-list(APPEND libs ${Boost_LIBRARIES})
-
 find_package(GLFW REQUIRED)
 include_directories(${GLFW_INCLUDE_DIR})
 add_definitions(-DGLFW_NO_GLU)

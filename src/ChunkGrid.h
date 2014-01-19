@@ -3,11 +3,11 @@
 
 #include "Chunk.h"
 #include "util/math.h"
+#include "util/Optional.h"
 
 #include <glm/glm.hpp>
 #include <unordered_map>
 #include <memory>
-#include <boost/optional.hpp>
 
 class ChunkGrid {
 public:
@@ -18,11 +18,11 @@ public:
     void setChunk(const glm::ivec3 &pos, std::shared_ptr<Chunk> chunk);
     void clearAllChunks();
     
-    boost::optional<Block> findBlock(glm::ivec3 &pos) const;
+    Optional<Block> findBlock(glm::ivec3 &pos) const;
 
-    boost::optional<glm::ivec3> pick(const glm::vec3 &pos,
-                                     const glm::vec3 &dir,
-                                     float range) const;
+    Optional<glm::ivec3> pick(const glm::vec3 &pos,
+                              const glm::vec3 &dir,
+                              float range) const;
 
     static std::pair<glm::ivec3, glm::ivec3> posToChunkBlock(const glm::ivec3 &pos);
 

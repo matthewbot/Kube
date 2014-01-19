@@ -1,4 +1,5 @@
 #include "WorkQueue.h"
+#include <algorithm>
 #include <cassert>
 
 WorkQueue::WorkQueue() : stop_flag(false) { }
@@ -12,12 +13,12 @@ void WorkQueue::post(std::function<void ()> func, int priority) {
     cond.notify_all();
 }
 
-boost::optional<int> WorkQueue::getMinimumPriority() const {
+Optional<int> WorkQueue::getMinimumPriority() const {
     std::unique_lock<std::mutex> lock{mutex};
     
     return !item_heap.empty() ?
-	boost::optional<int>{item_heap.front().priority} :
-	boost::none;
+	Optional<int>{item_heap.front().priority} :
+	None;
 }
 
 void WorkQueue::stop() {

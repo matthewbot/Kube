@@ -1,18 +1,19 @@
 #ifndef WORKQUEUE_H
 #define WORKQUEUE_H
 
+#include "util/Optional.h"
+#include <vector>
 #include <utility>
 #include <chrono>
 #include <mutex>
 #include <condition_variable>
-#include <boost/optional.hpp>
 
 class WorkQueue {
 public:
     WorkQueue();
 
     void post(std::function<void ()> func, int priority=0);
-    boost::optional<int> getMinimumPriority() const;
+    Optional<int> getMinimumPriority() const;
     void stop();
 
     void sync() const;

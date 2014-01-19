@@ -5,7 +5,6 @@
 #include "BlockTypeRegistry.h"
 
 #include <glm/glm.hpp>
-#include <boost/variant.hpp>
 
 #include <memory>
 

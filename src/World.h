@@ -6,7 +6,6 @@
 #include "WorldGenerator.h"
 #include "util/ThreadManager.h"
 
-#include <boost/asio.hpp>
 #include <unordered_set>
 #include <memory>
 

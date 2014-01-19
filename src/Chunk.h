@@ -2,11 +2,10 @@
 #define CHUNK_H
 
 #include "gfx/Mesh.h" // TODO
+#include "util/Optional.h"
 
 #include "Block.h"
 #include "BlockTypeRegistry.h"
-
-#include <boost/optional.hpp>
 
 #include <array>
 #include <tuple>
@@ -30,7 +29,7 @@ public:
     const glm::ivec3 &getVec() const { return vec; }
     
     ChunkIndex adjacent(Face face) const { return { adjacentPos(vec, face) }; }
-    boost::optional<Face> sharedFace(const ChunkIndex &other) const {
+    Optional<Face> sharedFace(const ChunkIndex &other) const {
         return ::sharedFace(vec, other.vec);
     }
 

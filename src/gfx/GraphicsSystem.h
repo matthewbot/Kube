@@ -10,8 +10,6 @@
 #include "gfx/Texture.h"
 #include "gfx/Font.h"
 
-#include <boost/asio.hpp>
-
 class GraphicsSystem {
 public:
     typedef std::function<void ()> InputCallback;

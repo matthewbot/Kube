@@ -14,7 +14,7 @@ public:
     void post(std::function<void ()> func, int priority=0) {
 	queue.post(std::move(func), priority);
     }
-    boost::optional<int> getMinimumPriority() const {
+    Optional<int> getMinimumPriority() const {
 	return queue.getMinimumPriority();
     }
     void sync() const { queue.sync(); }

@@ -4,9 +4,9 @@
 #include <iostream>
 
 TEST(SharedFace, None) {
-    EXPECT_EQ(boost::none, sharedFace(glm::ivec3{0, 0, 0}, glm::ivec3{2, 0, 0}));
-    EXPECT_EQ(boost::none, sharedFace(glm::ivec3{0, 0, 0}, glm::ivec3{1, 1, 0}));
-    EXPECT_EQ(boost::none, sharedFace(glm::ivec3{1, 0, 0}, glm::ivec3{1, 1, 1}));
+    EXPECT_EQ(None, sharedFace(glm::ivec3{0, 0, 0}, glm::ivec3{2, 0, 0}));
+    EXPECT_EQ(None, sharedFace(glm::ivec3{0, 0, 0}, glm::ivec3{1, 1, 0}));
+    EXPECT_EQ(None, sharedFace(glm::ivec3{1, 0, 0}, glm::ivec3{1, 1, 1}));
 }
 
 static const glm::ivec3 offsets[] = {

@@ -10,12 +10,12 @@ const std::array<glm::ivec3, 6> face_normals = {
     glm::ivec3{0, 0, 1}, glm::ivec3{0, 0, -1}
 };
 
-boost::optional<Face> sharedFace(const glm::ivec3 &a, const glm::ivec3 &b) {
+Optional<Face> sharedFace(const glm::ivec3 &a, const glm::ivec3 &b) {
     glm::ivec3 d = b - a;
 
     int zeros = (d.x == 0) + (d.y == 0) + (d.z == 0);
     if (zeros != 2) {
-        return boost::none;
+        return None;
     }
 
     if (d.x == -1) {
@@ -32,7 +32,7 @@ boost::optional<Face> sharedFace(const glm::ivec3 &a, const glm::ivec3 &b) {
         return Face::TOP;
     }
 
-    return boost::none;
+    return None;
 }
 
 glm::ivec3 adjacentPos(const glm::ivec3 &pos, Face face) {

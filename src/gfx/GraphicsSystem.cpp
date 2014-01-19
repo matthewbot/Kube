@@ -2,6 +2,7 @@
 #include "gfx/tesselate.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <sstream>
 
 GraphicsSystem::GraphicsSystem(const World &world,
                                ThreadManager &tm) :

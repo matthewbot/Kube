@@ -20,7 +20,7 @@ void ChunkGrid::clearAllChunks() {
     chunks.clear();
 }
 
-boost::optional<Block> ChunkGrid::findBlock(glm::ivec3 &pos) const {
+Optional<Block> ChunkGrid::findBlock(glm::ivec3 &pos) const {
     glm::ivec3 chunkpos, blockpos;
     std::tie(chunkpos, blockpos) = posToChunkBlock(pos);
 
@@ -28,10 +28,10 @@ boost::optional<Block> ChunkGrid::findBlock(glm::ivec3 &pos) const {
     if (maybeChunk)
         return maybeChunk->getBlock(ChunkIndex{blockpos});
     else
-        return boost::none;
+        return None;
 }
 
-boost::optional<glm::ivec3> ChunkGrid::pick(const glm::vec3 &startpos,
+Optional<glm::ivec3> ChunkGrid::pick(const glm::vec3 &startpos,
                                             const glm::vec3 &dir,
                                             float range) const {
     static constexpr float step = .01;
@@ -48,7 +48,7 @@ boost::optional<glm::ivec3> ChunkGrid::pick(const glm::vec3 &startpos,
         range -= step;
     }
 
-    return boost::none;
+    return None;
 }
 
 std::pair<glm::ivec3, glm::ivec3> ChunkGrid::posToChunkBlock(const glm::ivec3 &pos) {
