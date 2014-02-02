@@ -55,7 +55,7 @@ ShaderProgram::ShaderProgram(const std::initializer_list<std::reference_wrapper<
         glGetProgramiv(id, GL_INFO_LOG_LENGTH, &length);
 
         std::unique_ptr<char []> log(new char [length+1]);
-        glGetProgramInfoLog(length, length, NULL, log.get());
+        glGetProgramInfoLog(id, length, NULL, log.get());
         log[length] = '\0';
 
         std::stringstream buf;
