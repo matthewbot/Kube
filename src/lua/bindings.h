@@ -10,23 +10,15 @@
 #include <memory>
 #include <utility>
 
-template <typename T>
-using IsBuiltinLuaType =
-    std::integral_constant<bool,
-                           std::is_same<T, std::string>::value ||
-                           std::is_same<T, bool>::value ||
-                           std::is_enum<T>::value ||
-                           std::is_arithmetic<T>::value>;
-
 namespace detail {
     template <typename T, typename = void>
     struct PushCValue {
         static void exec(lua_State *, const T &) {
             static_assert(sizeof(T) != sizeof(T),
-                          "Cannot push CValue with type T");
+                          "Type T is not a CValue");
         }
     };
-
+    
     template <>
     struct PushCValue<std::string> {
         static void exec(lua_State *L, const std::string &val) {
@@ -38,6 +30,13 @@ namespace detail {
     struct PushCValue<bool> {
         static void exec(lua_State *L, bool val) {
             lua_pushboolean(L, val);
+        }
+    };
+
+    template <>
+    struct PushCValue<std::nullptr_t> {
+        static void exec(lua_State *L, std::nullptr_t) {
+            lua_pushnil(L);
         }
     };
     
@@ -55,12 +54,29 @@ namespace detail {
             lua_pushinteger(L, static_cast<lua_Integer>(val));
         }
     };
+
+    template <typename T>
+    struct PushCValue<T, typename std::enable_if<std::is_class<T>::value &&
+                                                 !IsUserDataPtrType<T>::value>::type> {
+        static void exec(lua_State *L, const T &val) {
+            UserData<T>::pushPtr(L, std::unique_ptr<T>{new T(val)});
+        }
+    };
+    
+    template <typename T>
+    struct PushCValue<T, typename std::enable_if<IsUserDataPtrType<T>::value>::type> {
+        template <typename Tf>
+        static void exec(lua_State *L, Tf &&val) {
+            using Ti = typename IsUserDataPtrType<T>::inner_type;
+            UserData<Ti>::pushPtr(L, std::forward<Tf>(val));
+        }
+    };
 }
 
 template <typename T>
 void pushCValue(lua_State *L, T &&val) {
-    using Td = typename std::decay<T>::type;
-    detail::template PushCValue<Td>::exec(L, std::forward<T>(val));
+    detail::template PushCValue<typename std::decay<T>::type>
+        ::exec(L, std::forward<T>(val));
 }
 
 inline void pushCValues(lua_State *L) {
@@ -75,12 +91,12 @@ void pushCValues(lua_State *L, T &&val, Ts &&... vals) {
 namespace detail {
     template <typename T, typename = void>
     struct ToCValue {
-        static T exec(lua_State *, int index) {
+        static T exec(lua_State *, int) {
             static_assert(sizeof(T) != sizeof(T),
-                          "Cannot convert to CValue of type T");
+                          "Type T is not a CValue");
         }
     };
-
+    
     template <>
     struct ToCValue<std::string> {
         static std::string exec(lua_State *L, int index) {
@@ -115,11 +131,39 @@ namespace detail {
             return static_cast<T>(lua_tointeger(L, index));
         }
     };
+
+    template <typename T>
+    struct ToCValue<T, typename std::enable_if<
+                           std::is_class<T>::value &&
+                           !IsUserDataPtrType<T>::value>::type> {
+        static T &exec(lua_State *L, int index) {
+            return UserData<T>::getRef(L, index);
+        }
+    };
+
+    template <typename T>
+    struct ToCValue<T *, typename std::enable_if<std::is_class<T>::value>::type> {
+        static T *exec(lua_State *L, int index) {
+            return UserData<T>::toPtr(L, index);
+        }        
+    };
+    
+    template <typename T>
+    struct ToCValue<T, typename std::enable_if<IsUserDataPtrType<T>::value &&
+                                               !std::is_pointer<T>::value>::type> {
+        static T &exec(lua_State *L, int index) {
+            using Ti = typename IsUserDataPtrType<T>::inner_type;
+            return UserData<Ti>::template getPtr<T>(L, index);
+        }
+    };
 }
 
 template <typename T>
-T toCValue(lua_State *L, int index) {
-    return detail::template ToCValue<T>::exec(L, index);
+auto toCValue(lua_State *L, int index) ->
+    decltype(detail::template ToCValue<typename std::decay<T>::type>::exec(L, index))
+{
+    return detail::template ToCValue<typename std::decay<T>::type>
+        ::exec(L, index);
 }
 
 namespace detail {

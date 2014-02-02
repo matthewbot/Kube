@@ -11,13 +11,19 @@ template <typename T>
 struct IsUserDataPtrType : public std::false_type { };
 
 template <typename T>
-struct IsUserDataPtrType<T *> : public std::true_type { };
+struct IsUserDataPtrType<T *> : public std::true_type {
+    using inner_type = T;
+};
 
 template <typename T>
-struct IsUserDataPtrType<std::shared_ptr<T>> : public std::true_type { };
+struct IsUserDataPtrType<std::shared_ptr<T>> : public std::true_type {
+    using inner_type = T;
+};
 
 template <typename T>
-struct IsUserDataPtrType<std::unique_ptr<T>> : public std::true_type { };
+struct IsUserDataPtrType<std::unique_ptr<T>> : public std::true_type {
+    using inner_type = T;
+};
 
 template <typename T>
 struct UserData {
@@ -47,8 +53,7 @@ struct UserData {
         static_assert(IsUserDataPtrType<TPtr>::value,
                       "Trying to convert userdata to an unsupported pointer type");
 
-        auto &ud = *static_cast<UserData<T> *>(
-            luaL_checkudata(L, narg, typeid(T).name()));
+        auto &ud = toUserData(L, narg);
         auto tptrptr = ud.ptr.template getPtr<TPtr>();
         if (!tptrptr) {
             throw std::runtime_error("Converting UserData to wrong pointer type");
@@ -63,8 +68,7 @@ struct UserData {
             return nullptr;
         }
 
-        auto &ud = *static_cast<UserData<T> *>(
-            luaL_checkudata(L, narg, typeid(T).name()));
+        auto &ud = toUserData(L, narg);
         return ud.ptr.template match<T *>(
             [](T *ptr) { return ptr; },
             [](const std::shared_ptr<T> &ptr) { return ptr.get(); },
@@ -85,10 +89,16 @@ struct UserData {
     // Invoke destructor on a stack entry.
     // Should only be needed in __gc metamethod.
     static void destroy(lua_State *L, int narg) {
-        auto &ud = *static_cast<UserData<T> *>(
-            luaL_checkudata(L, narg, typeid(T).name()));
+        auto &ud = toUserData(L, narg);
         ud.~UserData<T>();
     }
+
+private:
+    static UserData<T> &toUserData(lua_State *L, int narg) {
+        return *static_cast<UserData<T> *>(
+            luaL_checkudata(L, narg, typeid(T).name()));
+    }
+
 };
 
 #endif

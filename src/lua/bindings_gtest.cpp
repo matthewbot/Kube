@@ -6,6 +6,19 @@
 class BindingsTest : public testing::Test {
 protected:
     Lua lua;
+
+    struct Foo {
+        int i;
+
+        Foo(int i) : i(i) { }
+
+        bool operator==(const Foo &f) const { return i == f.i; }
+    };
+
+    virtual void SetUp() {
+        luaL_newmetatable(lua, typeid(Foo).name());
+        lua_pop(lua, 1);
+    }
 };
 
 static const std::string teststr = "Hello World";
@@ -76,4 +89,40 @@ TEST_F(BindingsTest, ToCValues) {
     EXPECT_EQ(testdbl, std::get<3>(vals));
     EXPECT_EQ(testbool, std::get<4>(vals));
     EXPECT_EQ(testenum, std::get<5>(vals));
+}
+
+TEST_F(BindingsTest, ByValue) {
+    Foo testfoo{42};
+    pushCValue(lua, testfoo);
+    EXPECT_EQ(testfoo, toCValue<Foo>(lua, -1));
+}
+
+TEST_F(BindingsTest, PushAndToPtr) {
+    Foo testfoo{42};
+
+    pushCValue(lua, &testfoo);
+    EXPECT_EQ(testfoo, toCValue<const Foo &>(lua, -1));
+
+    std::unique_ptr<Foo> testfoo_uptr{new Foo(testfoo)};
+    pushCValue(lua, std::move(testfoo_uptr));
+    EXPECT_FALSE(testfoo_uptr.get());
+    EXPECT_EQ(testfoo, toCValue<const Foo &>(lua, -1));
+    EXPECT_EQ(testfoo, *toCValue<std::unique_ptr<Foo>>(lua, -1));
+
+    auto testfoo_sptr = std::make_shared<Foo>(55);
+    pushCValue(lua, testfoo_sptr);
+    EXPECT_TRUE(testfoo_sptr.get());
+    EXPECT_EQ(*testfoo_sptr, toCValue<const Foo &>(lua, -1));
+    EXPECT_EQ(testfoo_sptr, toCValue<std::shared_ptr<Foo>>(lua, -1));
+}
+
+TEST_F(BindingsTest, PushAndToNull) {
+    pushCValue(lua, nullptr);
+    EXPECT_TRUE(lua_isnil(lua, -1));
+    pushCValue(lua, std::unique_ptr<Foo>());
+    EXPECT_TRUE(lua_isnil(lua, -1));
+    pushCValue(lua, std::shared_ptr<Foo>());
+    EXPECT_TRUE(lua_isnil(lua, -1));
+
+    EXPECT_EQ(nullptr, toCValue<Foo *>(lua, 1));
 }
