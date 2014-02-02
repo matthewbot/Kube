@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cassert>
 
-WorkQueue::WorkQueue() : stop_flag(false) { }
+WorkQueue::WorkQueue() : stop_flag(false), idle_flag(false) { }
 
 void WorkQueue::post(std::function<void ()> func, int priority) {
     assert(func);
@@ -30,13 +30,13 @@ void WorkQueue::stop() {
 
 void WorkQueue::sync() const {
     std::unique_lock<std::mutex> lock{mutex};
-    cond.wait(lock, [=]{ return item_heap.empty(); });
+    cond.wait(lock, [&]{ return idle_flag && item_heap.empty(); });
 }
 
 void WorkQueue::runAllWork() {
     std::unique_lock<std::mutex> lock{mutex};
     while (true) {
-	cond.wait(lock, [=]{ return stop_flag || !item_heap.empty(); });
+	cond.wait(lock, [&]{ return stop_flag || !item_heap.empty(); });
 
 	if (stop_flag) {
 	    return;
@@ -52,7 +52,7 @@ bool WorkQueue::runSomeWork(std::chrono::milliseconds time) {
     std::unique_lock<std::mutex> lock{mutex};
     while (true) {
 	bool timeout = !cond.wait_until(lock, stop_time,
-					[=]{ return stop_flag || !item_heap.empty(); });
+					[&]{ return stop_flag || !item_heap.empty(); });
 	if (timeout) {
 	    return true;
 	}
@@ -70,8 +70,10 @@ void WorkQueue::runItemWithoutLock(std::unique_lock<std::mutex> &lock) {
     std::pop_heap(std::begin(item_heap), std::end(item_heap));
     item_heap.pop_back();
 
+    idle_flag = false;
     lock.unlock();
-    cond.notify_all();
+    cond.notify_all(); // TODO hack
     item.func();
     lock.lock();
+    idle_flag = true;
 }
