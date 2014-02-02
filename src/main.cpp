@@ -1,6 +1,6 @@
 #include "lua/Lua.h"
-#include "lua/MetatableBuilder.h"
-#include "lua/call.h"
+//#include "lua/MetatableBuilder.h"
+//#include "lua/call.h"
 #include "Block.h"
 #include "util/ThreadManager.h"
 #include "gfx/Shader.h"
@@ -118,9 +118,10 @@ private:
     int seed;
 };
 
-static void buildMetaTables(Lua &lua) {
+/*static void buildMetaTables(Lua &lua) {
     MetatableBuilder<FaceMap<unsigned int>>(lua, "FaceMapUInt")
-        .rwindex<Face, unsigned int>();
+        .rwindex<Face, unsigned int>()
+        .function("fill", &FaceMap<unsigned int>::fill);
     
     MetatableBuilder<BlockTypeInfo>(lua, "BlockTypeInfo")
         .constructor("new")
@@ -130,26 +131,29 @@ static void buildMetaTables(Lua &lua) {
      
     MetatableBuilder<BlockTypeRegistry>(lua, "BlockTypeRegistry")
         .function("makeType", &BlockTypeRegistry::makeType);
-}
+        }*/
 
 int main(int argc, char **argv) {
     ThreadManager tm;
 
     tm.postWorkAll([](WorkerThread &th) {
         auto &lua = th.cacheLocal<Lua>("lua");
-        buildMetaTables(lua);
+//        buildMetaTables(lua);
         lua.doFile("game.lua");
     });
 
-    tm.postWork([](WorkerThread &th) {
-        auto &lua = th.cacheLocal<Lua>("lua");
-        callLua<void ()>(lua, "test");
+    BlockTypeRegistry blocktypes;
+    bool blah = false;
+    
+    tm.postWork([&](WorkerThread &th) {
+//        auto &lua = th.cacheLocal<Lua>("lua");
+//        callLua<void (BlockTypeRegistry &)>(lua, "register_blocktypes", blocktypes);
+        blah = true;
     });
 
     tm.syncWork();
 
-    BlockTypeRegistry blocktypes;
-    registerBlockTypes(blocktypes);
+    assert(blah);
     const auto &air = blocktypes.getType("air");
 
     TestWorldGenerator gen;
