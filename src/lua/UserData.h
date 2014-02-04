@@ -84,16 +84,11 @@ struct UserData {
     }
 
 private:
+    // TODO extract as toRawPtr, use in getRef
     // std::is_pointer<TPtr> === std::true_type
     template <typename TPtr>
     static TPtr toPtrHelper(lua_State *L, int narg, std::true_type) {
-        auto &ud = toUserData(L, narg);
-
-        // All possible ownership types can become a raw pointer
-        return ud.ptr.template match<T *>(
-            [](T *ptr) { return ptr; },
-            [](const std::shared_ptr<T> &ptr) { return ptr.get(); },
-            [](const std::unique_ptr<T> &ptr) { return ptr.get(); });
+        return toRawPtr(L, narg);
     }
 
     // std::is_pointer<TPtr> === std::false_type
@@ -103,15 +98,34 @@ private:
         return copyOrMove(getPtr<TPtr>(L, narg));
     }
 
+    static T *toRawPtr(lua_State *L, int narg) {
+        auto &ud = toUserData(L, narg);
+
+        // All possible ownership types can become a raw pointer
+        return ud.ptr.template match<T *>(
+            [](T *ptr) { return ptr; },
+            [](const std::shared_ptr<T> &ptr) { return ptr.get(); },
+            [](const std::unique_ptr<T> &ptr) { return ptr.get(); });
+    }
+    
 public:
     // Converts a stack entry to a reference to the underlying type,
     // checking for nil and null.
     static T &getRef(lua_State *L, int narg) {
-        if (std::is_const<T>::value && !checkMetatable(L, narg)) {
-            return UserData<typename std::remove_const<T>::type>::getRef(L, narg);
+        if (std::is_const<T>::value) {
+            int top = lua_gettop(L);
+
+            lua_getmetatable(L, narg);
+            luaL_getmetatable(L, getMetatableName().c_str());
+            bool metatable_equal = lua_rawequal(L, -1, -2);
+            lua_settop(L, top);
+
+            if (!metatable_equal) {
+                return UserData<typename std::remove_const<T>::type>::getRef(L, narg);
+            }
         }
         
-        auto ptr = toPtr<T *>(L, narg);
+        auto ptr = toRawPtr(L, narg);
         if (ptr) {
             return *ptr;
         } else {
@@ -141,16 +155,6 @@ public:
         } else {
             return std::string{"UD_"} + typeid(T).name();
         }
-    }
-
-    static bool checkMetatable(lua_State *L, int narg) {
-        int top = lua_gettop(L);
-        
-        luaL_getmetatable(L, getMetatableName().c_str());
-        bool match = lua_getmetatable(L, narg) && lua_rawequal(L, -1, -2);
-        lua_settop(L, top);
-
-        return match;
     }
 };
 

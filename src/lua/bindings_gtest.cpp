@@ -116,8 +116,9 @@ TEST_F(BindingsTest, PushAndToPtr) {
     EXPECT_EQ(testfoo, toCValue<Foo &>(lua, -1));
     EXPECT_EQ(testfoo, toCValue<const Foo &>(lua, -1));
     EXPECT_EQ(testfoo, *toCValue<std::unique_ptr<Foo>>(lua, -1)); // should move unique_ptr
-    EXPECT_EQ(nullptr, toCValue<std::unique_ptr<Foo> &>(lua, -1)); // unique_ptr has been moved
-    EXPECT_EQ(nullptr, toCValue<const std::unique_ptr<Foo> &>(lua, -1)); // unique_ptr has been moved
+    EXPECT_EQ(nullptr, toCValue<std::unique_ptr<Foo>>(lua, -1)); // unique_ptr has been moved
+    EXPECT_EQ(nullptr, toCValue<std::unique_ptr<Foo> &>(lua, -1));
+    EXPECT_EQ(nullptr, toCValue<const std::unique_ptr<Foo> &>(lua, -1));
 
     auto testfoo_sptr = std::make_shared<Foo>(55);
     pushCValue(lua, testfoo_sptr);
@@ -128,6 +129,22 @@ TEST_F(BindingsTest, PushAndToPtr) {
     EXPECT_EQ(testfoo_sptr, toCValue<std::shared_ptr<Foo>>(lua, -1));
     EXPECT_EQ(testfoo_sptr, toCValue<std::shared_ptr<Foo> &>(lua, -1));
     EXPECT_EQ(testfoo_sptr, toCValue<const std::shared_ptr<Foo> &>(lua, -1));
+}
+
+TEST_F(BindingsTest, PushRef) {
+    Foo testfoo{55};
+    pushCValue(lua, testfoo);
+    EXPECT_NE(&testfoo, &toCValue<Foo &>(lua, -1));
+    EXPECT_NE(&testfoo, &toCValue<const Foo &>(lua, -1));
+    
+    pushCValue(lua, std::ref(testfoo));
+    EXPECT_EQ(testfoo, toCValue<Foo>(lua, -1));
+    EXPECT_EQ(&testfoo, &toCValue<Foo &>(lua, -1));
+    EXPECT_EQ(&testfoo, &toCValue<const Foo &>(lua, -1));
+
+    pushCValue(lua, std::cref(testfoo));
+    EXPECT_EQ(testfoo, toCValue<const Foo>(lua, -1));
+    EXPECT_EQ(&testfoo, &toCValue<const Foo &>(lua, -1));
 }
 
 TEST_F(BindingsTest, PushAndToNull) {
@@ -142,6 +159,11 @@ TEST_F(BindingsTest, PushAndToNull) {
     EXPECT_EQ(nullptr, toCValue<const Foo *>(lua, 1));
     EXPECT_EQ(nullptr, toCValue<std::unique_ptr<Foo>>(lua, 1));
     EXPECT_EQ(nullptr, toCValue<std::shared_ptr<Foo>>(lua, 1));
+}
+
+TEST_F(BindingsTest, ConstReferenceStdString) {    
+    pushCValue(lua, teststr);
+//    EXPECT_EQ(teststr, toCValue<const std::string &>(lua, -1));
 }
 
 TEST_F(BindingsTest, ConstCorrectness) {

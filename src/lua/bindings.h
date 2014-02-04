@@ -9,8 +9,15 @@
 #include <type_traits>
 #include <memory>
 #include <utility>
+#include <functional>
 
 namespace detail {
+    template <typename T>
+    struct IsReferenceWrapper : public std::false_type { };
+
+    template <typename T>
+    struct IsReferenceWrapper<std::reference_wrapper<T>> : public std::true_type { };
+    
     template <typename T, typename = void>
     struct PushCValue {
         static void exec(lua_State *, const T &) {
@@ -57,9 +64,19 @@ namespace detail {
 
     template <typename T>
     struct PushCValue<T, typename std::enable_if<std::is_class<T>::value &&
-                                                 !IsUserDataPtrType<T>::value>::type> {
+                                                 !IsUserDataPtrType<T>::value &&
+                                                 !IsReferenceWrapper<T>::value>::type> {
         static void exec(lua_State *L, const T &val) {
             UserData<T>::pushPtr(L, std::unique_ptr<T>{new T(val)});
+        }
+    };
+
+    template <typename T>
+    struct PushCValue<std::reference_wrapper<T>,
+                      typename std::enable_if<std::is_class<T>::value &&
+                                              !IsUserDataPtrType<T>::value>::type> {
+        static void exec(lua_State *L, std::reference_wrapper<T> val) {
+            UserData<T>::pushPtr(L, &val.get());
         }
     };
     
@@ -135,8 +152,11 @@ namespace detail {
     template <typename T>
     struct ToCValue<T, typename std::enable_if<std::is_class<T>::value &&
                                                !IsUserDataPtrType<T>::value>::type> {
-        static T &exec(lua_State *L, int index) {
-            return UserData<T>::getRef(L, index);
+        static T exec(lua_State *L, int index) {
+            // try to convert to a const T, because this will
+            // auto-retry as a regular T. In either case, we can make
+            // a copy that the caller requested.
+            return UserData<const T>::getRef(L, index);
         }
     };
 
