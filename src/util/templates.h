@@ -161,6 +161,21 @@ detail::BindConstructors<T> bindConstructors() {
     return {};
 }
 
+namespace detail {
+    template <typename T, typename = void>
+    struct CopyOrMove {
+        static T exec(T &ref) { return ref; }        
+    };
 
+    template <typename T>
+    struct CopyOrMove<T, typename std::enable_if<!std::is_copy_constructible<T>::value>::type> {
+        static T exec(T &ref) { return std::move(ref); }
+    };
+}
+
+template <typename T>
+T copyOrMove(T &ref) {
+    return detail::CopyOrMove<T>::exec(ref);
+}
 
 #endif

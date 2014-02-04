@@ -133,24 +133,31 @@ namespace detail {
     };
 
     template <typename T>
-    struct ToCValue<T, typename std::enable_if<
-                           std::is_class<T>::value &&
-                           !IsUserDataPtrType<T>::value>::type> {
+    struct ToCValue<T, typename std::enable_if<std::is_class<T>::value &&
+                                               !IsUserDataPtrType<T>::value>::type> {
         static T &exec(lua_State *L, int index) {
             return UserData<T>::getRef(L, index);
         }
     };
 
     template <typename T>
-    struct ToCValue<T *, typename std::enable_if<std::is_class<T>::value>::type> {
-        static T *exec(lua_State *L, int index) {
-            return UserData<T>::toPtr(L, index);
+    struct ToCValue<T &, typename std::enable_if<std::is_class<T>::value &&
+                                                 !IsUserDataPtrType<T>::value>::type> {
+        static T &exec(lua_State *L, int index) {
+            return UserData<T>::getRef(L, index);
         }        
     };
-    
+  
     template <typename T>
-    struct ToCValue<T, typename std::enable_if<IsUserDataPtrType<T>::value &&
-                                               !std::is_pointer<T>::value>::type> {
+    struct ToCValue<T, typename std::enable_if<IsUserDataPtrType<T>::value>::type> {
+        static T exec(lua_State *L, int index) {
+            using Ti = typename IsUserDataPtrType<T>::inner_type;
+            return UserData<Ti>::template toPtr<T>(L, index);
+        }
+    };
+
+    template <typename T>
+    struct ToCValue<T &, typename std::enable_if<IsUserDataPtrType<T>::value>::type> {
         static T &exec(lua_State *L, int index) {
             using Ti = typename IsUserDataPtrType<T>::inner_type;
             return UserData<Ti>::template getPtr<T>(L, index);
@@ -159,11 +166,8 @@ namespace detail {
 }
 
 template <typename T>
-auto toCValue(lua_State *L, int index) ->
-    decltype(detail::template ToCValue<typename std::decay<T>::type>::exec(L, index))
-{
-    return detail::template ToCValue<typename std::decay<T>::type>
-        ::exec(L, index);
+T toCValue(lua_State *L, int index) {
+    return detail::template ToCValue<T>::exec(L, index);
 }
 
 namespace detail {
