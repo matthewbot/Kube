@@ -15,7 +15,6 @@ static const glm::ivec3 offsets[] = {
     glm::ivec3{-8, 4, 7}};
 
 TEST(SharedFace, FaceNormals) {
-
     for (auto face : all_faces) {
         auto normal = faceNormal(face);
         SCOPED_TRACE(glm::to_string(normal));

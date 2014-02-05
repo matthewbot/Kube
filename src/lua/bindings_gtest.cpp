@@ -162,8 +162,7 @@ TEST_F(BindingsTest, PushAndToNull) {
 }
 
 TEST_F(BindingsTest, ConstReferenceStdString) {    
-    pushCValue(lua, teststr);
-//    EXPECT_EQ(teststr, toCValue<const std::string &>(lua, -1));
+    // TODO
 }
 
 TEST_F(BindingsTest, ConstCorrectness) {

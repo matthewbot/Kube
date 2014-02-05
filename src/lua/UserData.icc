@@ -1,0 +1,135 @@
+#include <type_traits>
+#include <memory>
+
+#include <iostream>
+#include <cassert>
+
+template <typename T>
+struct IsUserDataPtrType : public std::false_type { };
+
+template <typename T>
+struct IsUserDataPtrType<const T> : public IsUserDataPtrType<T> { };
+
+template <typename T>
+struct IsUserDataPtrType<T *> : public std::true_type {
+    using inner_type = T;
+};
+
+template <typename T>
+struct IsUserDataPtrType<std::shared_ptr<T>> : public std::true_type {
+    using inner_type = T;
+};
+
+template <typename T>
+struct IsUserDataPtrType<std::unique_ptr<T>> : public std::true_type {
+    using inner_type = T;
+};
+
+template <typename T> template <typename TPtr>
+void UserData<T>::pushPtr(lua_State *L, TPtr &&ptr) {
+    if (!ptr) {
+        lua_pushnil(L);
+        return;
+    }
+
+    void *mem = lua_newuserdata(L, sizeof(UserData<T>));
+    new (mem) UserData{std::forward<TPtr>(ptr)};
+    std::string name = getMetatableName();
+    luaL_getmetatable(L, name.c_str());
+    lua_setmetatable(L, -2);
+}
+
+template <typename T> template <typename TPtr>
+TPtr &UserData<T>::getPtr(lua_State *L, int narg) {
+    static_assert(IsUserDataPtrType<TPtr>::value,
+                  "Trying to convert userdata to an unsupported pointer type");
+        
+    auto &ud = toUserData(L, narg);
+    auto tptrptr = ud.ptr.template getPtr<typename std::remove_cv<TPtr>::type>();
+    if (!tptrptr) {
+        throw std::runtime_error("Converting UserData to wrong pointer type");
+    }
+    return *tptrptr;
+}
+
+template <typename T> template <typename TPtr>
+TPtr UserData<T>::toPtr(lua_State *L, int narg) {
+    if (lua_isnil(L, narg)) {
+        return nullptr;
+    }
+
+    // static if std::is_pointer<TPtr>
+    return toPtrHelper<TPtr>(L, narg, typename std::is_pointer<TPtr>::type());
+}
+
+template <typename T> template <typename TPtr>
+TPtr UserData<T>::toPtrHelper(lua_State *L, int narg, std::true_type) {
+    return toRawPtr(L, narg);
+}
+
+template <typename T> template <typename TPtr>
+TPtr UserData<T>::toPtrHelper(lua_State *L, int narg, std::false_type) {
+    // smart pointer types must match exactly, so just use getPtr.
+    return copyOrMove(getPtr<TPtr>(L, narg));
+}
+
+template <typename T>
+T *UserData<T>::toRawPtr(lua_State *L, int narg) {
+    auto &ud = toUserData(L, narg);
+
+    // All possible ownership types can become a raw pointer
+    return ud.ptr.template match<T *>(
+        [](T *ptr) { return ptr; },
+        [](const std::shared_ptr<T> &ptr) { return ptr.get(); },
+        [](const std::unique_ptr<T> &ptr) { return ptr.get(); });
+}
+
+template <typename T>
+T &UserData<T>::getRef(lua_State *L, int narg) {
+    if (std::is_const<T>::value) {
+        int top = lua_gettop(L);
+
+        lua_getmetatable(L, narg);
+        luaL_getmetatable(L, getMetatableName().c_str());
+        bool metatable_equal = lua_rawequal(L, -1, -2);
+        lua_settop(L, top);
+
+        if (!metatable_equal) {
+            return UserData<typename std::remove_const<T>::type>::getRef(L, narg);
+        }
+    }
+        
+    auto ptr = toRawPtr(L, narg);
+    if (ptr) {
+        return *ptr;
+    } else {
+        throw std::runtime_error("Trying to convert nil/null userdata to reference");
+    }
+}
+
+template <typename T>
+void UserData<T>::destroy(lua_State *L, int narg) {
+    auto &ud = toUserData(L, narg);
+    ud.~UserData<T>();
+}
+
+template <typename T>
+UserData<T> &UserData<T>::toUserData(lua_State *L, int narg) {
+    std::string name = getMetatableName();
+    return *static_cast<UserData<T> *>(
+        luaL_checkudata(L, narg, name.c_str()));
+}
+
+template <typename T>
+std::string UserData<T>::getMetatableName() {
+    if (std::is_const<T>::value) {
+        return std::string{"UD_C_"} + typeid(T).name();
+    } else {
+        return std::string{"UD_"} + typeid(T).name();
+    }
+}
+
+template <typename T> template <typename TPtr>
+UserData<T>::UserData(TPtr &&ptr) : ptr(std::forward<TPtr>(ptr)) { }
+    
+    
