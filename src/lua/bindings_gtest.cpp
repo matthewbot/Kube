@@ -16,8 +16,8 @@ protected:
     Lua lua;
 
     virtual void SetUp() {
-        luaL_newmetatable(lua, UserData<Foo>::getMetatableName().c_str());
-        luaL_newmetatable(lua, UserData<const Foo>::getMetatableName().c_str());
+        luaL_newmetatable(lua, PointerWrapper<Foo>::getMetatableName().c_str());
+        luaL_newmetatable(lua, PointerWrapper<const Foo>::getMetatableName().c_str());
         lua_pop(lua, 2);
     }
 };
@@ -143,7 +143,7 @@ TEST_F(BindingsTest, PushRef) {
     EXPECT_EQ(&testfoo, &toCValue<const Foo &>(lua, -1));
 
     pushCValue(lua, std::cref(testfoo));
-    EXPECT_EQ(testfoo, toCValue<const Foo>(lua, -1));
+    EXPECT_EQ(testfoo, toCValue<Foo>(lua, -1));
     EXPECT_EQ(&testfoo, &toCValue<const Foo &>(lua, -1));
 }
 
