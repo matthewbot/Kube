@@ -81,6 +81,18 @@ TEST_F(BindingsTest, ToCValue) {
     EXPECT_EQ(testenum, toCValue<TestEnum>(lua, -1));
 }
 
+TEST_F(BindingsTest, ToCValueException) {
+    pushCValue(lua, 42);
+    EXPECT_THROW(toCValue<std::string>(lua, -1), ToCValueException);
+
+    pushCValue(lua, std::string{"Hello"});
+    EXPECT_THROW(toCValue<int>(lua, -1), ToCValueException);
+    EXPECT_THROW(toCValue<bool>(lua, -1), ToCValueException);
+
+    lua_pushnil(lua);
+    EXPECT_THROW(toCValue<float>(lua, -1), ToCValueException);
+}
+
 TEST_F(BindingsTest, ToCValues) {
     pushCValues(lua, teststr, testint, testflt, testdbl, testbool, testenum);
     auto vals = toCValues<std::string, int, float, double, bool, TestEnum>(lua, 1);
@@ -108,6 +120,9 @@ TEST_F(BindingsTest, PushAndToPtr) {
     EXPECT_EQ(testfoo, toCValue<Foo &>(lua, -1));
     EXPECT_EQ(testfoo, toCValue<const Foo &>(lua, -1));
     EXPECT_EQ(&testfoo, toCValue<Foo *>(lua, -1));
+    EXPECT_EQ(&testfoo, toCValue<Foo *&>(lua, -1));
+    EXPECT_THROW(toCValue<std::unique_ptr<Foo>>(lua, -1), ToCValueException);
+    EXPECT_THROW(toCValue<std::shared_ptr<Foo>>(lua, -1), ToCValueException);
 
     std::unique_ptr<Foo> testfoo_uptr{new Foo(testfoo)};
     pushCValue(lua, std::move(testfoo_uptr));
@@ -115,36 +130,44 @@ TEST_F(BindingsTest, PushAndToPtr) {
     EXPECT_EQ(testfoo, toCValue<Foo>(lua, -1));
     EXPECT_EQ(testfoo, toCValue<Foo &>(lua, -1));
     EXPECT_EQ(testfoo, toCValue<const Foo &>(lua, -1));
+    EXPECT_EQ(testfoo, *toCValue<Foo *>(lua, -1));
+    EXPECT_EQ(testfoo, *toCValue<const Foo *>(lua, -1));
     EXPECT_EQ(testfoo, *toCValue<std::unique_ptr<Foo>>(lua, -1)); // should move unique_ptr
     EXPECT_EQ(nullptr, toCValue<std::unique_ptr<Foo>>(lua, -1)); // unique_ptr has been moved
     EXPECT_EQ(nullptr, toCValue<std::unique_ptr<Foo> &>(lua, -1));
     EXPECT_EQ(nullptr, toCValue<const std::unique_ptr<Foo> &>(lua, -1));
-
+    EXPECT_THROW(toCValue<Foo *&>(lua, -1), ToCValueException);
+    EXPECT_THROW(toCValue<std::shared_ptr<Foo>>(lua, -1), ToCValueException);
+    
     auto testfoo_sptr = std::make_shared<Foo>(55);
     pushCValue(lua, testfoo_sptr);
     EXPECT_TRUE(testfoo_sptr.get());
     EXPECT_EQ(*testfoo_sptr, toCValue<Foo>(lua, -1));
     EXPECT_EQ(*testfoo_sptr, toCValue<Foo &>(lua, -1));
     EXPECT_EQ(*testfoo_sptr, toCValue<const Foo &>(lua, -1));
+    EXPECT_EQ(testfoo_sptr.get(), toCValue<Foo *>(lua, -1));
+    EXPECT_EQ(testfoo_sptr.get(), toCValue<const Foo *>(lua, -1));
     EXPECT_EQ(testfoo_sptr, toCValue<std::shared_ptr<Foo>>(lua, -1));
     EXPECT_EQ(testfoo_sptr, toCValue<std::shared_ptr<Foo> &>(lua, -1));
     EXPECT_EQ(testfoo_sptr, toCValue<const std::shared_ptr<Foo> &>(lua, -1));
+    EXPECT_THROW(toCValue<Foo *&>(lua, -1), ToCValueException);
+    EXPECT_THROW(toCValue<std::unique_ptr<Foo>>(lua, -1), ToCValueException);
 }
 
 TEST_F(BindingsTest, PushRef) {
     Foo testfoo{55};
-    pushCValue(lua, testfoo);
-    EXPECT_NE(&testfoo, &toCValue<Foo &>(lua, -1));
-    EXPECT_NE(&testfoo, &toCValue<const Foo &>(lua, -1));
     
     pushCValue(lua, std::ref(testfoo));
     EXPECT_EQ(testfoo, toCValue<Foo>(lua, -1));
     EXPECT_EQ(&testfoo, &toCValue<Foo &>(lua, -1));
     EXPECT_EQ(&testfoo, &toCValue<const Foo &>(lua, -1));
+    EXPECT_THROW(toCValue<std::shared_ptr<Foo>>(lua, -1), ToCValueException);
 
     pushCValue(lua, std::cref(testfoo));
     EXPECT_EQ(testfoo, toCValue<Foo>(lua, -1));
+    EXPECT_THROW(toCValue<Foo &>(lua, -1), ToCValueException);
     EXPECT_EQ(&testfoo, &toCValue<const Foo &>(lua, -1));
+    EXPECT_THROW(toCValue<std::shared_ptr<Foo>>(lua, -1), ToCValueException);
 }
 
 TEST_F(BindingsTest, PushAndToNull) {
@@ -159,12 +182,8 @@ TEST_F(BindingsTest, PushAndToNull) {
     EXPECT_EQ(nullptr, toCValue<const Foo *>(lua, 1));
     EXPECT_EQ(nullptr, toCValue<std::unique_ptr<Foo>>(lua, 1));
     EXPECT_EQ(nullptr, toCValue<std::shared_ptr<Foo>>(lua, 1));
-}
 
-TEST_F(BindingsTest, ConstReferenceStdString) {    
-    // TODO
-}
-
-TEST_F(BindingsTest, ConstCorrectness) {
-    // TODO
+    EXPECT_THROW(toCValue<Foo>(lua, -1), ToCValueException);
+    EXPECT_THROW(toCValue<std::shared_ptr<Foo> &>(lua, -1), ToCValueException);
+    EXPECT_THROW(toCValue<std::unique_ptr<Foo> &>(lua, -1), ToCValueException);
 }

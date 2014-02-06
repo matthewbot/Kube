@@ -3,12 +3,29 @@
 
 #include <lua.hpp>
 #include <tuple>
+#include <typeindex>
 
 template <typename T>
 void pushCValue(lua_State *L, T &&val);
 
 template <typename... Ts>
 void pushCValues(lua_State *L, Ts &&... vals);
+
+class ToCValueException : public std::exception {
+public:
+    ToCValueException(int argn, std::type_index expected, std::string msg=std::string{});
+
+    int getArgn() const { return argn; }
+    const std::type_index &getExpected() const { return expected; }
+    const std::string &getMessage() const { return msg; }
+    
+    virtual const char *what() const throw();
+
+private:
+    int argn;
+    std::type_index expected;
+    std::string msg;
+};
 
 template <typename T>
 T toCValue(lua_State *L, int index);

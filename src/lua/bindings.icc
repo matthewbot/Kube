@@ -112,6 +112,12 @@ void pushCValues(lua_State *L, Ts &&... vals) {
 
 // toCValue
 namespace detail {
+    template <typename T>
+    void throwException(int argn, std::string msg = std::string{}) {
+        auto &expected = typeid(typename std::decay<T>::type);
+        throw ToCValueException(argn, expected, std::move(msg));
+    }
+    
     template <typename T, typename = void>
     struct ToCValue {
         static T exec(lua_State *, int) {
@@ -123,9 +129,12 @@ namespace detail {
     template <>
     struct ToCValue<std::string> {
         static std::string exec(lua_State *L, int index) {
-            luaL_checktype(L, index, LUA_TSTRING);
+            if (lua_type(L, index) != LUA_TSTRING) {
+                throwException<std::string>(index);
+            }
+            
             size_t len;
-            auto cptr = luaL_checklstring(L, index, &len);
+            auto cptr = lua_tolstring(L, index, &len);
             return { cptr, len };
         }
     };
@@ -133,7 +142,10 @@ namespace detail {
     template <>
     struct ToCValue<bool> {
         static bool exec(lua_State *L, int index) {
-            luaL_checktype(L, index, LUA_TBOOLEAN);
+            if (lua_type(L, index) != LUA_TBOOLEAN) {
+                throwException<bool>(index);
+            }
+
             return lua_toboolean(L, index) != 0;
         }
     };
@@ -141,7 +153,10 @@ namespace detail {
     template <typename T>
     struct ToCValue<T, typename std::enable_if<std::is_floating_point<T>::value>::type> {
         static T exec(lua_State *L, int index) {
-            luaL_checktype(L, index, LUA_TNUMBER);
+            if (lua_type(L, index) != LUA_TNUMBER) {
+                throwException<T>(index);
+            }
+
             return static_cast<T>(lua_tonumber(L, index));
         }
     };
@@ -150,19 +165,23 @@ namespace detail {
     struct ToCValue<T, typename std::enable_if<std::is_integral<T>::value ||
                                                std::is_enum<T>::value>::type> {
         static T exec(lua_State *L, int index) {
-            luaL_checktype(L, index, LUA_TNUMBER);
+            if (lua_type(L, index) != LUA_TNUMBER) {
+                throwException<T>(index);
+            }
+
             return static_cast<T>(lua_tointeger(L, index));
         }
     };
 
     template <typename T>
     struct ToCValue<T, typename std::enable_if<std::is_class<T>::value &&
-                                               !IsPointerWrapperType<T>::value>::type> {
+                                               !IsPointerWrapperType<T>::value &&
+                                               !std::is_pointer<T>::value>::type> {
         static T exec(lua_State *L, int index) {
             return ToCValue<const T &>::exec(L, index);
         }
     };
-
+    
     template <typename T>
     struct ToCValue<T &, typename std::enable_if<std::is_class<T>::value &&
                                                  !IsPointerWrapperType<T>::value &&
@@ -170,12 +189,12 @@ namespace detail {
         static T &exec(lua_State *L, int index) {
             auto wrapptr = PointerWrapper<T>::to(L, index);
             if (!wrapptr) {
-                throw std::runtime_error("Expected pointer wrapper of T");
+                throwException<T>(index);
             }
                 
             auto ptr = wrapptr->get();
             if (!ptr) {
-                throw std::runtime_error("Expected non-null pointer wrapper");
+                throwException<T>(index, "PointerWrapper holds null");
             }
 
             return *ptr;
@@ -188,12 +207,14 @@ namespace detail {
         static const T &exec(lua_State *L, int index) {
             auto wrapptr = PointerWrapper<const T>::to(L, index);
             if (!wrapptr) {
+                // const references can accept non-const pointer wrappers,
+                // so try converting to a regular reference before failing.
                 return ToCValue<T &>::exec(L, index);
             }
                 
             auto ptr = wrapptr->get();
             if (!ptr) {
-                throw std::runtime_error("Expected non-null pointer wrapper");
+                throwException<T>(index, "PointerWrapper holds null");
             }
 
             return *ptr;
@@ -201,7 +222,8 @@ namespace detail {
     };
     
     template <typename T>
-    struct ToCValue<T, typename std::enable_if<IsPointerWrapperType<T>::value>::type> {
+    struct ToCValue<T, typename std::enable_if<IsPointerWrapperType<T>::value &&
+                                               !std::is_pointer<T>::value>::type> {
         static T exec(lua_State *L, int index) {
             if (lua_isnil(L, index)) {
                 return nullptr;
@@ -212,36 +234,30 @@ namespace detail {
     };
 
     template <typename T>
-    struct ToCValue<T &, typename std::enable_if<IsPointerWrapperType<T>::value &&
-                                                 !std::is_const<T>::value>::type> {
-        static T &exec(lua_State *L, int index) {
-            using Wrapper = typename IsPointerWrapperType<T>::Wrapper;
-            auto wrapptr = Wrapper::to(L, index);
-            if (!wrapptr) {
-                throw std::runtime_error("Expected pointer wrapper");
+    struct ToCValue<T *, typename std::enable_if<std::is_class<T>::value &&
+                                                 !IsPointerWrapperType<T>::value>::type> {
+        static T *exec(lua_State *L, int index) {
+            if (lua_isnil(L, index)) {
+                return nullptr;
             }
 
-            auto ptrptr = wrapptr->template getPtr<T>();
-            if (!ptrptr) {
-                throw std::runtime_error("Given pointer wrapper of incorrect type");
-            }
-            
-            return *ptrptr;
+            return &ToCValue<T &>::exec(L, index);
         }
     };
 
     template <typename T>
-    struct ToCValue<const T &, typename std::enable_if<IsPointerWrapperType<T>::value>::type> {
-        static const T &exec(lua_State *L, int index) {
+    struct ToCValue<T &, typename std::enable_if<IsPointerWrapperType<T>::value>::type> {
+        static T &exec(lua_State *L, int index) {
             using Wrapper = typename IsPointerWrapperType<T>::Wrapper;
             auto wrapptr = Wrapper::to(L, index);
             if (!wrapptr) {
-                return ToCValue<const T &>::exec(L, index);
+                throwException<T>(index);
             }
 
-            auto ptrptr = wrapptr->template getPtr<T>();
+            using TPtr = typename std::remove_const<T>::type;
+            auto ptrptr = wrapptr->template getPtr<TPtr>();
             if (!ptrptr) {
-                throw std::runtime_error("Given pointer wrapper of incorrect type");
+                throwException<T>(index, "PointerWrapper holds wrong pointer type");
             }
             
             return *ptrptr;
