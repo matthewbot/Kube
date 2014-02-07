@@ -187,3 +187,19 @@ TEST_F(BindingsTest, PushAndToNull) {
     EXPECT_THROW(toCValue<std::shared_ptr<Foo> &>(lua, -1), ToCValueException);
     EXPECT_THROW(toCValue<std::unique_ptr<Foo> &>(lua, -1), ToCValueException);
 }
+
+int invokeInt(int i) { return 2 * i; }
+int invokeString(const std::string &str) { return str.length(); }
+int invokeStringFoo(const std::string &str, Foo f) { return f.i + str.length(); }
+
+TEST_F(BindingsTest, InvokeWithLuaArgs) {
+    pushCValue(lua, 21);
+    EXPECT_EQ(42, invokeWithLuaArgs<int>(lua, 1, &invokeInt));
+
+    pushCValue(lua, std::string{"abcd"});
+    EXPECT_EQ(4, invokeWithLuaArgs<const std::string &>(lua, 2, &invokeString));
+
+    pushCValue(lua, Foo{1});
+    auto tmp = invokeWithLuaArgs<const std::string &, Foo>(lua, 2, &invokeStringFoo);
+    EXPECT_EQ(5, tmp);
+}

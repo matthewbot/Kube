@@ -284,3 +284,43 @@ std::tuple<Ts...> toCValues(lua_State *L, int narg) {
     using Seq = typename AscendingSequence<sizeof...(Ts)>::seq; 
     return detail::toCValuesHelper<Ts...>(L, narg, Seq());
 }
+
+namespace detail {
+    template <typename T>
+    struct ArgsToCValues {
+        using type = T;
+    };
+
+    template <typename T>
+    struct ArgsToCValues<const T &> {
+        using type = typename std::conditional<
+            std::is_same<T, bool>::value
+            || std::is_same<T, std::string>::value
+            || std::is_arithmetic<T>::value,
+            T, // Remove const & on built-in lua types
+            const T &>::type;
+    };
+
+    template <typename Result, typename Callable, typename... CValues, size_t... Nums>
+    Result invokeWithLuaArgsHelper(lua_State *L,
+                                   int narg,
+                                   Callable &&call,
+                                   TypeSequence<CValues...>,
+                                   NumericSequence<Nums...>) {
+        return std::forward<Callable>(call)(toCValue<CValues>(L, narg+Nums)...);
+    }
+}
+
+template <typename... Args, typename Callable>
+auto invokeWithLuaArgs(lua_State *L, int narg, Callable &&call) ->
+    typename std::result_of<Callable(Args...)>::type
+{
+    using CValuesSeq = typename MapTypeSequence<detail::ArgsToCValues, Args...>::seq;
+    using NumsSeq = typename AscendingSequence<sizeof...(Args)>::seq;
+    using Result = typename std::result_of<Callable(Args...)>::type;
+    return detail::invokeWithLuaArgsHelper<Result>(L,
+                                                   narg,
+                                                   std::forward<Callable>(call),
+                                                   CValuesSeq(),
+                                                   NumsSeq());
+}

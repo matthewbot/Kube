@@ -47,6 +47,8 @@ template <size_t N>
 struct AscendingSequence;
 
 // Invokes a callable type with values from a tuple.
+// TODO, overload for rvalue reference
+// TODO, not actually needed anymore
 template <typename Callable, typename... Args>
 auto invokeWithTuple(Callable &&callable,
                      const std::tuple<Args...> &args)
