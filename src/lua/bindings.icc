@@ -175,8 +175,7 @@ namespace detail {
 
     template <typename T>
     struct ToCValue<T, typename std::enable_if<std::is_class<T>::value &&
-                                               !IsPointerWrapperType<T>::value &&
-                                               !std::is_pointer<T>::value>::type> {
+                                               !IsPointerWrapperType<T>::value>::type> {
         static T exec(lua_State *L, int index) {
             return ToCValue<const T &>::exec(L, index);
         }
@@ -296,8 +295,9 @@ namespace detail {
         using type = typename std::conditional<
             std::is_same<T, bool>::value
             || std::is_same<T, std::string>::value
-            || std::is_arithmetic<T>::value,
-            T, // Remove const & on built-in lua types
+            || std::is_arithmetic<T>::value
+            || IsPointerWrapperType<T>::value,
+            T, // Remove const & on built-in lua types and pointer types
             const T &>::type;
     };
 

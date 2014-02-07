@@ -84,6 +84,7 @@ TEST_F(BindingsTest, ToCValue) {
 TEST_F(BindingsTest, ToCValueException) {
     pushCValue(lua, 42);
     EXPECT_THROW(toCValue<std::string>(lua, -1), ToCValueException);
+    EXPECT_THROW(toCValue<Foo &>(lua, -1), ToCValueException);
 
     pushCValue(lua, std::string{"Hello"});
     EXPECT_THROW(toCValue<int>(lua, -1), ToCValueException);
@@ -91,6 +92,10 @@ TEST_F(BindingsTest, ToCValueException) {
 
     lua_pushnil(lua);
     EXPECT_THROW(toCValue<float>(lua, -1), ToCValueException);
+    EXPECT_THROW(toCValue<Foo &>(lua, -1), ToCValueException);
+
+    EXPECT_THROW(toCValue<int>(lua, 42), ToCValueException);
+    EXPECT_THROW(toCValue<Foo &>(lua, 42), ToCValueException);
 }
 
 TEST_F(BindingsTest, ToCValues) {

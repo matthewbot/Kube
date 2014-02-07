@@ -25,7 +25,7 @@ public:
     template <typename TPtr>
     TPtr *getPtr();
 
-    static std::string getMetatableName();
+    static const std::string &getMetatableName();
     
 private:
     template <typename TPtr>

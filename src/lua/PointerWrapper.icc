@@ -63,10 +63,8 @@ TPtr *PointerWrapper<T>::getPtr() {
 }
 
 template <typename T>
-std::string PointerWrapper<T>::getMetatableName() {
-    if (std::is_const<T>::value) {
-        return std::string{"UD_C_"} + typeid(T).name();
-    } else {
-        return std::string{"UD_"} + typeid(T).name();
-    }
+const std::string &PointerWrapper<T>::getMetatableName() {
+    static const std::string name =
+        std::string{std::is_const<T>::value ? "UD_C_" : "UD_"} + typeid(T).name();
+    return name;
 }
