@@ -13,6 +13,8 @@ struct IsPointerWrapperType;
 template <typename T>
 class PointerWrapper {
 public:
+    static_assert(std::is_class<T>::value, "Instantiating PointerWrapper for non-class type");
+    
     using Inner = T;
     
     template <typename TPtr>

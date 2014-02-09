@@ -3,10 +3,7 @@
 
 #include <string>
 #include <stdexcept>
-
-extern "C" {
-    struct lua_State;
-}
+#include <lua.hpp>
 
 class LuaException : public std::runtime_error {
 public:
@@ -20,7 +17,16 @@ public:
     Lua(Lua &&lua);
     ~Lua();
 
+    template <typename V>
+    void setGlobal(const std::string &name, V &&val);
+    template <typename V>
+    V getGlobal(const std::string &name);
+
     void doFile(const std::string &filename);
+    void doString(const std::string &code);
+
+    template <typename Result, typename... Args>
+    Result call(const std::string &name, Args&&... args);
 
     Lua &operator=(const Lua &) = delete;
 
@@ -28,6 +34,11 @@ public:
     
 private:
     lua_State *L;
+
+    void checkLoadResult(int result, const char *name);
+    void pcallWrapper(int nargs, int nresults, const char *name);
 };
+
+#include "Lua.icc"
 
 #endif

@@ -1,0 +1,47 @@
+#include "bindings.h"
+#include <sstream>
+
+template <typename V>
+void Lua::setGlobal(const std::string &name, V &&val) {
+    pushCValue(L, std::forward<V>(val));
+    lua_setglobal(L, name.c_str());
+}
+
+template <typename V>
+V Lua::getGlobal(const std::string &name) {
+    LuaStackFrame frame{L};
+    lua_getglobal(L, name.c_str());
+    V val = toCValue<V>(L, frame+1);
+    return val;
+}
+
+template <typename Result, typename... Args>
+Result Lua::call(const std::string &name, Args&&... args) {
+    LuaStackFrame frame{L};
+    
+    lua_getglobal(L, name.c_str());
+    if (lua_isnil(L, frame+1)) {
+        std::stringstream buf;
+        buf << "No lua function named " << name << std::endl;
+        throw LuaException(buf.str().c_str());
+    }
+    
+    pushCValues(L, std::forward<Args>(args)...);
+    constexpr int nresults = std::is_same<Result, void>::value ? 0 : 1;
+    int result = lua_pcall(L, sizeof...(Args), nresults, 0);
+
+    if (result == 0) {
+        return toCValue<Result>(L, frame+1);        
+    } else if (result == LUA_ERRRUN) {
+        std::stringstream buf;
+        buf << "Error while calling function " << name;
+        if (lua_type(L, frame+1) == LUA_TSTRING) {
+            buf << std::endl << lua_tostring(L, frame+1);
+        }
+        throw LuaException(buf.str().c_str());
+    } else {
+        std::stringstream buf;
+        buf << "Out of memory or unknown error while calling function " << name;
+        throw LuaException(buf.str().c_str());
+    }
+}
