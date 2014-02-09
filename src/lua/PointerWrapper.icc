@@ -34,19 +34,24 @@ void PointerWrapper<T>::push(lua_State *L, TPtr &&ptr) {
 
 template <typename T>
 PointerWrapper<T> *PointerWrapper<T>::to(lua_State *L, int index) {
+    LuaStackFrame frame{L};
+
+    void *ud = lua_touserdata(L, index);
+    if (!ud) {
+        return nullptr;
+    }
     if (!lua_getmetatable(L, index)) {
         return nullptr;
     }
 
     luaL_getmetatable(L, getMetatableName().c_str());
-    bool match = lua_rawequal(L, -1, -2);
-    lua_pop(L, 2);
+    bool match = lua_rawequal(L, frame+1, frame+2);
     
     if (!match) {
         return nullptr;
     }
 
-    return reinterpret_cast<PointerWrapper<T> *>(lua_touserdata(L, index));
+    return reinterpret_cast<PointerWrapper<T> *>(ud);
 }
 
 template <typename T>

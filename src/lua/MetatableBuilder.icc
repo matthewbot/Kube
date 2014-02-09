@@ -17,21 +17,26 @@ MetatableBuilder<T>::MetatableBuilder(lua_State *L, const std::string &clsname) 
     L(L),
     clsname(clsname)
 {
-    luaL_newmetatable(L, PointerWrapper<T>::getMetatableName().c_str());
+    LuaStackFrame frame{L};
+
     lua_newtable(L);
-    lua_pushvalue(L, -1);
+    const int class_tbl = frame+1;
+    lua_pushvalue(L, class_tbl);
     lua_setglobal(L, clsname.c_str());
-    lua_pushvalue(L, -1);
+
+    luaL_newmetatable(L, PointerWrapper<T>::getMetatableName().c_str());
+    const int meta_tbl = frame+2;
+    lua_pushvalue(L, class_tbl);
     lua_pushcclosure(L, detail::meta::index, 1);
-    lua_setfield(L, -3, "__index");
-    lua_pushvalue(L, -1);
+    lua_setfield(L, meta_tbl, "__index");
+    lua_pushvalue(L, class_tbl);
     lua_pushcclosure(L, detail::meta::eq<T>, 1);
-    lua_setfield(L, -3, "__eq");
+    lua_setfield(L, meta_tbl, "__eq");
+    lua_pushvalue(L, class_tbl);
     lua_pushcclosure(L, detail::meta::newindex, 1);
-    lua_setfield(L, -2, "__newindex");
+    lua_setfield(L, meta_tbl, "__newindex");
     lua_pushcfunction(L, detail::meta::gc<T>);
-    lua_setfield(L, -2, "__gc");
-    lua_pop(L, 1);
+    lua_setfield(L, meta_tbl, "__gc");
 }
 
 namespace detail {
@@ -46,20 +51,21 @@ namespace detail {
 
 template <typename T> template <typename... Args>
 MetatableBuilder<T> &MetatableBuilder<T>::constructor(const std::string &name) {
+    LuaStackFrame frame{L};
+    
     lua_getglobal(L, clsname.c_str());
     lua_pushcfunction(L, [](lua_State *L) -> int {
         pushCValue(L, invokeWithLuaArgs<Args...>(L, 2, detail::ConstructorWrapper<T>()));
         return 1;
     });
-    lua_setfield(L, -2, name.c_str());
-    lua_pop(L, 1);
+    lua_setfield(L, frame+1, name.c_str());
     return *this;
 }
 
 template <typename T> template <typename... Args>
 MetatableBuilder<T> &MetatableBuilder<T>::function(const std::string &name,
                                                    void (T::*func)(Args...)) {
-
+    LuaStackFrame frame{L};
     lua_getglobal(L, clsname.c_str());
 
     void *funcstorage = lua_newuserdata(L, sizeof(func));
@@ -72,15 +78,14 @@ MetatableBuilder<T> &MetatableBuilder<T>::function(const std::string &name,
         invokeWithLuaArgs<Args...>(L, 2, bindMemberFunction(obj, *funcptr));
         return 0;
     }, 1);
-    lua_setfield(L, -2, name.c_str());
-    lua_pop(L, 1);
+    lua_setfield(L, frame+1, name.c_str());
     return *this;
 }
 
 template <typename T> template <typename Res, typename... Args>
 MetatableBuilder<T> &MetatableBuilder<T>::function(const std::string &name,
                                                    Res (T::*func)(Args...)) {
-
+    LuaStackFrame frame{L};
     lua_getglobal(L, clsname.c_str());
 
     void *funcstorage = lua_newuserdata(L, sizeof(func));
@@ -93,13 +98,13 @@ MetatableBuilder<T> &MetatableBuilder<T>::function(const std::string &name,
         pushCValue(L, invokeWithLuaArgs<Args...>(L, 2, bindMemberFunction(obj, *funcptr)));
         return 1;
     }, 1);
-    lua_setfield(L, -2, name.c_str());
-    lua_pop(L, 1);
+    lua_setfield(L, frame+1, name.c_str());
     return *this;
 }
 
 template <typename T> template <typename V>
 MetatableBuilder<T> &MetatableBuilder<T>::getter(const std::string &name, V T::*mem) {
+    LuaStackFrame frame{L};
     lua_getglobal(L, clsname.c_str());
 
     void *memstorage = lua_newuserdata(L, sizeof(mem));
@@ -109,17 +114,16 @@ MetatableBuilder<T> &MetatableBuilder<T>::getter(const std::string &name, V T::*
         auto &obj = toCValue<T &>(L, 1);
         auto mem_ = *reinterpret_cast<decltype(mem) *>(
             lua_touserdata(L, lua_upvalueindex(1)));
-
         pushCValue(L, obj.*mem_);
         return 1;
     }, 1);
-    lua_setfield(L, -2, ("get_" + name).c_str());
-    lua_pop(L, 1);
+    lua_setfield(L, frame+1, ("get_" + name).c_str());
     return *this;
 }
 
 template <typename T> template <typename V>
 MetatableBuilder<T> &MetatableBuilder<T>::setter(const std::string &name, V T::*mem) {
+    LuaStackFrame frame{L};
     lua_getglobal(L, clsname.c_str());
 
     void *memstorage = lua_newuserdata(L, sizeof(mem));
@@ -136,8 +140,7 @@ MetatableBuilder<T> &MetatableBuilder<T>::setter(const std::string &name, V T::*
         });
         return 0;
     }, 1);
-    lua_setfield(L, -2, (std::string{"set_"} + name).c_str());
-    lua_pop(L, 1);
+    lua_setfield(L, frame+1, (std::string{"set_"} + name).c_str());
     return *this;        
 }
 
@@ -158,13 +161,13 @@ namespace detail {
 
 template <typename T> template <typename K>
 MetatableBuilder<T> &MetatableBuilder<T>::getindex() {
+    LuaStackFrame frame{L};
     lua_getglobal(L, clsname.c_str());
     lua_pushcfunction(L, [](lua_State *L) -> int {
         pushCValue(L, invokeWithLuaArgs<T &, K>(L, 1, detail::GetIndex<T>()));
         return 1;
     });
-    lua_setfield(L, -2, "index");
-    lua_pop(L, 1);
+    lua_setfield(L, frame+1, "index");
     return *this;
 }
 
@@ -180,13 +183,13 @@ namespace detail {
 
 template <typename T> template <typename K, typename V>
 MetatableBuilder<T> &MetatableBuilder<T>::setindex() {
+    LuaStackFrame frame{L};
     lua_getglobal(L, clsname.c_str());
     lua_pushcclosure(L, [](lua_State *L) -> int {
         invokeWithLuaArgs<T &, K, V>(L, 1, detail::SetIndex<T>());
         return 0;
     }, 0);
-    lua_setfield(L, -2, "newindex");
-    lua_pop(L, 1);
+    lua_setfield(L, frame+1, "newindex");
     return *this;
 }
 
@@ -197,6 +200,7 @@ MetatableBuilder<T> &MetatableBuilder<T>::index() {
 
 template <typename T>
 MetatableBuilder<T> &MetatableBuilder<T>::op_equals() {
+    LuaStackFrame frame{L};
     lua_getglobal(L, clsname.c_str());
     lua_pushcclosure(L, [](lua_State *L) -> int {
         auto &a = toCValue<const T &>(L, 1);
@@ -204,8 +208,7 @@ MetatableBuilder<T> &MetatableBuilder<T>::op_equals() {
         lua_pushboolean(L, a == b);
         return 1;
     }, 0);
-    lua_setfield(L, -2, "eq");
-    lua_pop(L, 1);
+    lua_setfield(L, frame+1, "eq");
     return *this;    
 }
 

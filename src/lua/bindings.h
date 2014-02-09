@@ -5,6 +5,18 @@
 #include <tuple>
 #include <typeindex>
 
+class LuaStackFrame {
+public:
+    LuaStackFrame(lua_State *&L) : L(L), start(lua_gettop(L)) { }
+    ~LuaStackFrame() { lua_settop(L, start); }
+
+    operator int() const { return start; }
+    
+private:
+    lua_State *&L;
+    int start;
+};
+
 template <typename T>
 void pushCValue(lua_State *L, T &&val);
 
