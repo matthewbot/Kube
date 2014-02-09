@@ -1,0 +1,238 @@
+#include "lua/bindings.h"
+#include <typeinfo>
+
+namespace detail {
+namespace meta {
+    int index(lua_State *L);
+    int newindex(lua_State *L);
+    template <typename T>
+    int eq(lua_State *L);
+    template <typename T>
+    int gc(lua_State *L);
+}
+}
+    
+template <typename T>
+MetatableBuilder<T>::MetatableBuilder(lua_State *L, const std::string &clsname) :
+    L(L),
+    clsname(clsname)
+{
+    luaL_newmetatable(L, PointerWrapper<T>::getMetatableName().c_str());
+    lua_newtable(L);
+    lua_pushvalue(L, -1);
+    lua_setglobal(L, clsname.c_str());
+    lua_pushvalue(L, -1);
+    lua_pushcclosure(L, detail::meta::index, 1);
+    lua_setfield(L, -3, "__index");
+    lua_pushvalue(L, -1);
+    lua_pushcclosure(L, detail::meta::eq<T>, 1);
+    lua_setfield(L, -3, "__eq");
+    lua_pushcclosure(L, detail::meta::newindex, 1);
+    lua_setfield(L, -2, "__newindex");
+    lua_pushcfunction(L, detail::meta::gc<T>);
+    lua_setfield(L, -2, "__gc");
+    lua_pop(L, 1);
+}
+
+namespace detail {
+    template <typename T>
+    struct ConstructorWrapper {
+        template <typename... Args>
+        std::unique_ptr<T> operator()(Args&&... args) {
+            return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+        }
+    };
+}
+
+template <typename T> template <typename... Args>
+MetatableBuilder<T> &MetatableBuilder<T>::constructor(const std::string &name) {
+    lua_getglobal(L, clsname.c_str());
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        pushCValue(L, invokeWithLuaArgs<Args...>(L, 2, detail::ConstructorWrapper<T>()));
+        return 1;
+    });
+    lua_setfield(L, -2, name.c_str());
+    lua_pop(L, 1);
+    return *this;
+}
+
+template <typename T> template <typename... Args>
+MetatableBuilder<T> &MetatableBuilder<T>::function(const std::string &name,
+                                                   void (T::*func)(Args...)) {
+
+    lua_getglobal(L, clsname.c_str());
+
+    void *funcstorage = lua_newuserdata(L, sizeof(func));
+    new (funcstorage) decltype(func) { func };
+        
+    lua_pushcclosure(L, [](lua_State *L) -> int {
+        auto &obj = toCValue<T &>(L, 1);
+        auto funcptr = reinterpret_cast<decltype(func) *>(
+            lua_touserdata(L, lua_upvalueindex(1)));
+        invokeWithLuaArgs<Args...>(L, 2, bindMemberFunction(obj, *funcptr));
+        return 0;
+    }, 1);
+    lua_setfield(L, -2, name.c_str());
+    lua_pop(L, 1);
+    return *this;
+}
+
+template <typename T> template <typename Res, typename... Args>
+MetatableBuilder<T> &MetatableBuilder<T>::function(const std::string &name,
+                                                   Res (T::*func)(Args...)) {
+
+    lua_getglobal(L, clsname.c_str());
+
+    void *funcstorage = lua_newuserdata(L, sizeof(func));
+    new (funcstorage) decltype(func) { func };
+        
+    lua_pushcclosure(L, [](lua_State *L) -> int {
+        auto &obj = toCValue<T &>(L, 1);
+        auto funcptr = reinterpret_cast<decltype(func) *>(
+            lua_touserdata(L, lua_upvalueindex(1)));
+        pushCValue(L, invokeWithLuaArgs<Args...>(L, 2, bindMemberFunction(obj, *funcptr)));
+        return 1;
+    }, 1);
+    lua_setfield(L, -2, name.c_str());
+    lua_pop(L, 1);
+    return *this;
+}
+
+template <typename T> template <typename V>
+MetatableBuilder<T> &MetatableBuilder<T>::getter(const std::string &name, V T::*mem) {
+    lua_getglobal(L, clsname.c_str());
+
+    void *memstorage = lua_newuserdata(L, sizeof(mem));
+    new (memstorage) decltype(mem) { mem };
+        
+    lua_pushcclosure(L, [](lua_State *L) -> int {
+        auto &obj = toCValue<T &>(L, 1);
+        auto mem_ = *reinterpret_cast<decltype(mem) *>(
+            lua_touserdata(L, lua_upvalueindex(1)));
+
+        pushCValue(L, obj.*mem_);
+        return 1;
+    }, 1);
+    lua_setfield(L, -2, ("get_" + name).c_str());
+    lua_pop(L, 1);
+    return *this;
+}
+
+template <typename T> template <typename V>
+MetatableBuilder<T> &MetatableBuilder<T>::setter(const std::string &name, V T::*mem) {
+    lua_getglobal(L, clsname.c_str());
+
+    void *memstorage = lua_newuserdata(L, sizeof(mem));
+    new (memstorage) decltype(mem) { mem };
+
+    lua_pushcclosure(L, [](lua_State *L) -> int {
+        // invokeWithLuaArgs used to get a const V &, even when V is a
+        // builtin lua type (in that case, invokeWithLuaArgs puts V on
+        // the stack and gives a reference to that)
+        invokeWithLuaArgs<T &, const V &>(L, 1, [&](T &obj, const V &val) {
+            auto mem_ = *reinterpret_cast<decltype(mem) *>(
+                lua_touserdata(L, lua_upvalueindex(1)));
+            obj.*mem_ = val;
+        });
+        return 0;
+    }, 1);
+    lua_setfield(L, -2, (std::string{"set_"} + name).c_str());
+    lua_pop(L, 1);
+    return *this;        
+}
+
+template <typename T> template <typename V>
+MetatableBuilder<T> &MetatableBuilder<T>::field(const std::string &name, V T::*mem) {
+    return getter(name, mem).setter(name, mem);
+}
+
+namespace detail {
+    template <typename T>
+    struct GetIndex {
+        template <typename K>
+        auto operator()(T &obj, K &&key) -> decltype(obj[std::forward<K>(key)]) {
+            return obj[std::forward<K>(key)];
+        }
+    };
+}
+
+template <typename T> template <typename K>
+MetatableBuilder<T> &MetatableBuilder<T>::getindex() {
+    lua_getglobal(L, clsname.c_str());
+    lua_pushcfunction(L, [](lua_State *L) -> int {
+        pushCValue(L, invokeWithLuaArgs<T &, K>(L, 1, detail::GetIndex<T>()));
+        return 1;
+    });
+    lua_setfield(L, -2, "index");
+    lua_pop(L, 1);
+    return *this;
+}
+
+namespace detail {
+    template <typename T>
+    struct SetIndex {
+        template <typename K, typename V>
+        void operator()(T &obj, K &&key, V &&val) {
+            obj[std::forward<K>(key)] = std::forward<V>(val);
+        }
+    };
+}
+
+template <typename T> template <typename K, typename V>
+MetatableBuilder<T> &MetatableBuilder<T>::setindex() {
+    lua_getglobal(L, clsname.c_str());
+    lua_pushcclosure(L, [](lua_State *L) -> int {
+        invokeWithLuaArgs<T &, K, V>(L, 1, detail::SetIndex<T>());
+        return 0;
+    }, 0);
+    lua_setfield(L, -2, "newindex");
+    lua_pop(L, 1);
+    return *this;
+}
+
+template <typename T> template <typename K, typename V>
+MetatableBuilder<T> &MetatableBuilder<T>::index() {
+    return getindex<K>().setindex<K, V>();
+}
+
+template <typename T>
+MetatableBuilder<T> &MetatableBuilder<T>::op_equals() {
+    lua_getglobal(L, clsname.c_str());
+    lua_pushcclosure(L, [](lua_State *L) -> int {
+        auto &a = toCValue<const T &>(L, 1);
+        auto &b = toCValue<const T &>(L, 2);
+        lua_pushboolean(L, a == b);
+        return 1;
+    }, 0);
+    lua_setfield(L, -2, "eq");
+    lua_pop(L, 1);
+    return *this;    
+}
+
+namespace detail {
+namespace meta {    
+    template <typename T>
+    int gc(lua_State *L) {
+        PointerWrapper<T>::to(L, 1)->~PointerWrapper<T>();
+        return 0;
+    }
+
+    template <typename T>
+    int eq(lua_State *L) {
+        lua_pushliteral(L, "eq");
+        lua_gettable(L, lua_upvalueindex(1));
+        if (!lua_isnil(L, -1)) {
+            lua_pushvalue(L, 1);
+            lua_pushvalue(L, 2);
+            lua_call(L, 2, 1);
+            return 1;
+        }
+
+        auto &a = toCValue<const T &>(L, 1);
+        auto &b = toCValue<const T &>(L, 2);
+
+        lua_pushboolean(L, &a == &b);
+        return 1;
+    }
+}
+}
