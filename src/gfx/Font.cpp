@@ -40,7 +40,7 @@ void Font::load(const std::string &filename) {
 
 const Font::CharProps *Font::getProps(unsigned int ch) const {
     auto iter = charprops.find(ch);
-    if (iter == std::end(charprops)) { // TODO utility func
+    if (iter == std::end(charprops)) {
         return nullptr;
     } else {
         return &iter->second;

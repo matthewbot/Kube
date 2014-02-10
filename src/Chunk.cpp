@@ -6,7 +6,7 @@
 #include <cassert>
 #include <glm/glm.hpp>
 
-const detail::ChunkIndexRangeType ChunkIndex::Range;
+const detail::ChunkIndexRangeType ChunkIndex::range;
 
 unsigned int ChunkIndex::getOffset() const {
     return vec.z + Chunk::ZSize*(vec.y + Chunk::YSize*vec.x);

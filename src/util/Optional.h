@@ -64,11 +64,35 @@ public:
     }
     
     explicit operator bool() const { return ptr != nullptr; }
-        
-    T &operator*() { return *reinterpret_cast<T *>(ptr); }
-    const T &operator*() const { return *reinterpret_cast<const T *>(ptr); }
+
+    T &operator*() & { return *reinterpret_cast<T *>(ptr); }
+    T &&operator*() && { return std::move(*reinterpret_cast<T *>(ptr)); }
+    const T &operator*() const & { return *reinterpret_cast<const T *>(ptr); }
     T *operator->() { return reinterpret_cast<T *>(ptr); }
     const T *operator->() const { return reinterpret_cast<T *>(ptr); }
+
+    template <typename E, typename... Args>
+    T &or_throw(Args &&... args) & {
+        if (*this) {
+            return **this;
+        }
+        
+        throw E(std::forward<Args>(args)...);
+    }
+
+    template <typename E, typename... Args>
+    T &&or_throw(Args &&... args) && {
+        return std::move(or_throw<T, Args...>(std::forward<Args>(args)...));
+    }
+
+    template <typename E, typename... Args>
+    const T &or_throw(Args &&... args) const & {
+        if (*this) {
+            return **this;
+        }
+        
+        throw E(std::forward<Args>(args)...);
+    }
     
 private:
     template <typename U>

@@ -1,7 +1,6 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
-#include "gfx/Mesh.h" // TODO
 #include "util/Optional.h"
 
 #include "Block.h"
@@ -23,7 +22,7 @@ public:
     ChunkIndex(int x, int y, int z) : vec{x, y, z} { }
     ChunkIndex(glm::ivec3 vec) : vec{vec} { }
 
-    static const detail::ChunkIndexRangeType Range; // TODO lowercase
+    static const detail::ChunkIndexRangeType range;
     
     unsigned int getOffset() const;
     const glm::ivec3 &getVec() const { return vec; }
@@ -67,14 +66,9 @@ public:
 
     void fill(const Block &block);
 
-    // TODO move elsewhere (gfx/tesselate.h)
-    void tesselate(MeshBuilder &builder) const;
-
 private:
     const BlockTypeRegistry *reg;
     std::array<BlockType::ID, XSize*YSize*ZSize> data;
-
-    void tesselate_face(MeshBuilder &builder, const ChunkIndex &pos, Face f) const;
 };
 
 namespace detail {

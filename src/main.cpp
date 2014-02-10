@@ -28,26 +28,7 @@
 
 const float pi = static_cast<float>(M_PI);
 
-void registerBlockTypes(BlockTypeRegistry &types) {
-    BlockTypeInfo air;
-    air.visible = false;
-    air.solid = false;
-    types.makeType("air", air);
-    
-    BlockTypeInfo stone;
-    stone.face_texes.fill(3);
-    types.makeType("stone", stone);
 
-    BlockTypeInfo dirt;
-    dirt.face_texes.fill(2);
-    types.makeType("dirt", dirt);
-
-    BlockTypeInfo grass;
-    grass.face_texes.fill(0);
-    grass.face_texes[Face::TOP] = 1;
-    grass.face_texes[Face::BOTTOM] = 2;
-    types.makeType("grass", grass);
-}
 
 class TestWorldGenerator : public WorldGenerator {
 public:
@@ -74,7 +55,7 @@ public:
         std::unique_ptr<Chunk> chunk{new Chunk{blocktypes}};
         chunk->fill(air);
 
-        for (auto &pos : ChunkIndex::Range) {
+        for (auto &pos : ChunkIndex::range) {
             glm::vec3 worldpos = static_cast<glm::vec3>(chunkpos) +
                 static_cast<glm::vec3>(pos.getVec())/32.0f;
             chunk->setBlock(pos, solid(worldpos) ? stone : air);
@@ -98,7 +79,7 @@ public:
                             chunk->setBlock(idx, grass);
                         } else {
                             chunk->setBlock(idx, dirt);
-                        }
+                         }
 
                         if (++ctr >= 3) {
                             break;
@@ -149,8 +130,6 @@ int main(int argc, char **argv) {
     });
 
     tm.syncWork();
-
-    std::cout << "Dumping blocktypes" << std::endl;
     blocktypes.dump(std::cout);
 
     const auto &air = blocktypes.getType("air");
@@ -169,7 +148,6 @@ int main(int argc, char **argv) {
 
     RPYCameraManipulator camera_manipulator{.002, 5};
 
-    // TODO
     gfx.runRenderLoop([&]() -> bool {
         Window &window = gfx.getWindow();
         RPYCamera &camera = gfx.getCamera();

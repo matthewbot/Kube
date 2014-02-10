@@ -10,7 +10,7 @@ static void tesselate_cube(MeshBuilder &builder,
 void tesselate(MeshBuilder &builder, const Chunk &chunk) {
     builder.reset(MeshFormat{3, 3, 3});
 
-    for (auto &pos : ChunkIndex::Range) {
+    for (auto &pos : ChunkIndex::range) {
         auto block = chunk.getBlock(pos);
         if (!block.getType().visible) {
             continue;
