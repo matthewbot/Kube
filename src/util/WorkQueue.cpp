@@ -72,8 +72,8 @@ void WorkQueue::runItemWithoutLock(std::unique_lock<std::mutex> &lock) {
 
     idle_flag = false;
     lock.unlock();
-    cond.notify_all(); // TODO hack
     item.func();
     lock.lock();
     idle_flag = true;
+    cond.notify_all();
 }

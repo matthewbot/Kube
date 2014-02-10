@@ -19,3 +19,15 @@ TEST(LuaTest, Call) {
     auto result = lua.call<double, double>("foo", 3, 4);
     EXPECT_EQ(5, result);
 }
+
+TEST(LuaTest, CallVoid) {
+    Lua lua;
+    static const char *code =
+        "function foo(a)\n"
+        "    globalvar = a\n"
+        "end\n";
+    lua.doString(code);
+
+    lua.call<void>("foo", std::string{"Hello World"});
+    EXPECT_EQ("Hello World", lua.getGlobal<std::string>("globalvar"));
+}

@@ -125,6 +125,11 @@ namespace detail {
                           "Type T is not a CValue");
         }
     };
+
+    template <>
+    struct ToCValue<void> {
+        static void exec(lua_State *, int) { }
+    };
     
     template <>
     struct ToCValue<std::string> {

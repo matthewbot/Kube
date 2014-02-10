@@ -4,6 +4,7 @@
 #include "BlockType.h"
 #include <string>
 #include <vector>
+#include <ostream>
 
 class BlockTypeRegistry {
 public:
@@ -11,6 +12,8 @@ public:
 
     const BlockType &getType(const std::string &name) const;
     const BlockType &getType(BlockType::ID id) const;
+
+    void dump(std::ostream &out) const;
     
 private:
     std::vector<BlockType> types_by_id;
