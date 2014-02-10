@@ -11,6 +11,8 @@ public:
     int getVal() { return val; }
     int getVal() const { return val; }
 
+    TestClass &getSelf() { return *this; }
+
     bool operator==(const TestClass &other) const { return val == other.val; }
     
     int val;
@@ -61,6 +63,23 @@ TEST(MetatableBuilder, Method) {
     ASSERT_EQ(0, luaL_loadstring(lua, testcode));
     ASSERT_EQ(0, lua_pcall(lua, 0, 1, 0));
     EXPECT_EQ(6, toCValue<int>(lua, 1));
+}
+
+TEST(MetatableBuilder, RefMethod) {
+    Lua lua;
+    MetatableBuilder<TestClass>(lua, "TestClass")
+        .function_ref("getSelf", &TestClass::getSelf);
+
+    TestClass testobj{2};
+    pushCValue(lua, std::ref(testobj));
+    lua_setglobal(lua, "testobj");
+    
+    static const char *testcode =
+        "return testobj:getSelf()";
+
+    ASSERT_EQ(0, luaL_loadstring(lua, testcode));
+    ASSERT_EQ(0, lua_pcall(lua, 0, 1, 0));
+    EXPECT_EQ(&testobj, toCValue<TestClass *>(lua, 1));
 }
 
 TEST(MetatableBuilder, ConstMethod) {

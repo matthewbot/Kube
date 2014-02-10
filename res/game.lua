@@ -14,5 +14,7 @@ function register_blocktypes(types)
 
    local grass = BlockTypeInfo.new()
    grass.face_texes:fill(0)
+   grass.face_texes[4] = 1
+   grass.face_texes[5] = 2
    types:makeType("grass", grass)
 end

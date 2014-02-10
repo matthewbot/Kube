@@ -102,6 +102,26 @@ MetatableBuilder<T> &MetatableBuilder<T>::function(const std::string &name,
     return *this;
 }
 
+template <typename T> template <typename Res, typename... Args>
+MetatableBuilder<T> &MetatableBuilder<T>::function_ref(const std::string &name,
+                                                       Res (T::*func)(Args...)) {
+    LuaStackFrame frame{L};
+    lua_getglobal(L, clsname.c_str());
+
+    void *funcstorage = lua_newuserdata(L, sizeof(func));
+    new (funcstorage) decltype(func) { func };
+        
+    lua_pushcclosure(L, [](lua_State *L) -> int {
+        auto &obj = toCValue<T &>(L, 1);
+        auto funcptr = reinterpret_cast<decltype(func) *>(
+            lua_touserdata(L, lua_upvalueindex(1)));
+        pushCValue(L, std::ref(invokeWithLuaArgs<Args...>(L, 2, bindMemberFunction(obj, *funcptr))));
+        return 1;
+    }, 1);
+    lua_setfield(L, frame+1, name.c_str());
+    return *this;
+}
+
 template <typename T> template <typename V>
 MetatableBuilder<T> &MetatableBuilder<T>::getter(const std::string &name, V T::*mem) {
     LuaStackFrame frame{L};
@@ -115,6 +135,25 @@ MetatableBuilder<T> &MetatableBuilder<T>::getter(const std::string &name, V T::*
         auto mem_ = *reinterpret_cast<decltype(mem) *>(
             lua_touserdata(L, lua_upvalueindex(1)));
         pushCValue(L, obj.*mem_);
+        return 1;
+    }, 1);
+    lua_setfield(L, frame+1, ("get_" + name).c_str());
+    return *this;
+}
+
+template <typename T> template <typename V>
+MetatableBuilder<T> &MetatableBuilder<T>::getter_ref(const std::string &name, V T::*mem) {
+    LuaStackFrame frame{L};
+    lua_getglobal(L, clsname.c_str());
+
+    void *memstorage = lua_newuserdata(L, sizeof(mem));
+    new (memstorage) decltype(mem) { mem };
+        
+    lua_pushcclosure(L, [](lua_State *L) -> int {
+        auto &obj = toCValue<T &>(L, 1);
+        auto mem_ = *reinterpret_cast<decltype(mem) *>(
+            lua_touserdata(L, lua_upvalueindex(1)));
+        pushCValue(L, std::ref(obj.*mem_));
         return 1;
     }, 1);
     lua_setfield(L, frame+1, ("get_" + name).c_str());
@@ -147,6 +186,11 @@ MetatableBuilder<T> &MetatableBuilder<T>::setter(const std::string &name, V T::*
 template <typename T> template <typename V>
 MetatableBuilder<T> &MetatableBuilder<T>::field(const std::string &name, V T::*mem) {
     return getter(name, mem).setter(name, mem);
+}
+
+template <typename T> template <typename V>
+MetatableBuilder<T> &MetatableBuilder<T>::field_ref(const std::string &name, V T::*mem) {
+    return getter_ref(name, mem).setter(name, mem);
 }
 
 namespace detail {

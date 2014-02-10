@@ -18,15 +18,24 @@ public:
     template <typename Ret, typename... Args>
     MetatableBuilder<T> &function(const std::string &name, Ret (T::*func)(Args...));
 
+    template <typename Ret, typename... Args>
+    MetatableBuilder<T> &function_ref(const std::string &name, Ret (T::*func)(Args...));
+    
     template <typename V>
     MetatableBuilder<T> &getter(const std::string &name, V T::*mem);
 
+    template <typename V>
+    MetatableBuilder<T> &getter_ref(const std::string &name, V T::*mem);
+    
     template <typename V>
     MetatableBuilder<T> &setter(const std::string &name, V T::*mem);
 
     template <typename V>
     MetatableBuilder<T> &field(const std::string &name, V T::*mem);
 
+    template <typename V>
+    MetatableBuilder<T> &field_ref(const std::string &name, V T::*mem);
+    
     template <typename K>
     MetatableBuilder<T> &getindex();
 

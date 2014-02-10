@@ -126,7 +126,7 @@ static void buildMetaTables(Lua &lua) {
         .constructor("new")
         .field("solid", &BlockTypeInfo::solid)
         .field("visible", &BlockTypeInfo::visible)
-        .field("face_texes", &BlockTypeInfo::face_texes);
+        .field_ref("face_texes", &BlockTypeInfo::face_texes);
      
     MetatableBuilder<BlockTypeRegistry>(lua, "BlockTypeRegistry")
         .function("makeType", &BlockTypeRegistry::makeType);
