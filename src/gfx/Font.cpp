@@ -30,7 +30,8 @@ void Font::load(const std::string &filename) {
             prop.yoffset = boost::lexical_cast<int>(kv["yoffset"]);
             prop.xadvance = boost::lexical_cast<int>(kv["xadvance"]);
         } else if (parsed.type == "page") {
-            tex.setImage(Image::loadPNG(kv["file"]));
+            std::ifstream file(kv["file"].c_str());
+            tex.setImage(Image::loadPNG(file));
         } else if (parsed.type == "common") {
             line_height = boost::lexical_cast<unsigned int>(kv["lineHeight"]);
             base_height = boost::lexical_cast<unsigned int>(kv["base"]);

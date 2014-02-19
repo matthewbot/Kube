@@ -28,8 +28,6 @@
 
 const float pi = static_cast<float>(M_PI);
 
-
-
 class TestWorldGenerator : public WorldGenerator {
 public:
     TestWorldGenerator() : seed(0) { }

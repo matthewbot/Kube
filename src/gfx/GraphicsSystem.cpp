@@ -1,8 +1,10 @@
 #include "gfx/GraphicsSystem.h"
+#include "gfx/TextureArrayBuilder.h"
 #include "gfx/tesselate.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <sstream>
+#include <fstream>
 
 GraphicsSystem::GraphicsSystem(const World &world,
                                ThreadManager &tm) :
@@ -19,7 +21,17 @@ GraphicsSystem::GraphicsSystem(const World &world,
     Shader frag2d{Shader::Type::FRAGMENT, "frag2d.glsl"};
     prgm2d = ShaderProgram{vert2d, frag2d};
 
-    blocktex.setImage(Image::loadPNG("blocks.png"), 4);
+    auto load_png_file = [](const char *name) -> Image {
+        std::ifstream file(name);
+        return Image::loadPNG(file);
+    };    
+    TextureArrayBuilder blocktex_builder{16, 16};
+    blocktex_builder.addImage(load_png_file("stone.png"));
+    blocktex_builder.addImage(load_png_file("dirt.png"));
+    blocktex_builder.addImage(load_png_file("grass.png"));
+    blocktex_builder.addImage(load_png_file("grass_side.png"));    
+    blocktex = blocktex_builder.build();
+
     sampler.setFilter(Sampler::NEAREST);
     
     font.load("font.fnt");

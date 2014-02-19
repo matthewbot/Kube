@@ -42,34 +42,42 @@ Image Image::flipped() const {
     return ret;
 }
 
-Image Image::loadPNG(const std::string &filename) {
+void Image::blit(const Image &src, unsigned int x, unsigned int y) {
+    for (unsigned int sy = 0; sy < src.getHeight(); sy++) {
+        for (unsigned int sx = 0; sx < src.getWidth(); sx++) {
+            (*this)(sx + x, sy + y) = src(sx, sy);
+        }
+    }
+}
+
+Image Image::loadPNG(std::istream &in) {
     png_structp png_ptr = png_create_read_struct(
-        PNG_LIBPNG_VER_STRING, nullptr,
-        nullptr, nullptr);
+        PNG_LIBPNG_VER_STRING,
+        nullptr, nullptr, nullptr);
     if (!png_ptr) {
         throw PNGException("Failed to create read struct");
     }
+
     png_infop info_ptr = png_create_info_struct(png_ptr);
     if (!info_ptr) {
         png_destroy_read_struct(&png_ptr, nullptr, nullptr);
         throw PNGException("Failed to create info struct");
     }
-
-    FILE *fp = fopen(filename.c_str(), "r");
-    if (!fp) {
+    
+    if (setjmp(png_jmpbuf(png_ptr))) {
         png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-        throw PNGException("Failed to open " + filename);
-    }
-
-    if (setjmp(png_jmpbuf(png_ptr)))
-    {
-        png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-        fclose(fp);
         throw PNGException("Error reading PNG");
     }
 
-    png_init_io(png_ptr, fp);
-
+    auto read_data_fn = [](png_structp png_ptr, png_bytep out, png_size_t count) {
+        std::istream &in = *reinterpret_cast<std::istream *>(png_get_io_ptr(png_ptr));
+        in.read(reinterpret_cast<char *>(out), count);
+        if (!in) {
+            png_error(png_ptr, "Failed to read from istream");
+        }
+    };
+    png_set_read_fn(png_ptr, &in, read_data_fn);
+    
     png_read_info(png_ptr, info_ptr);
 
     png_uint_32 width, height;
@@ -82,7 +90,6 @@ Image Image::loadPNG(const std::string &filename) {
 
     if (interlace_type != PNG_INTERLACE_NONE) {
         png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-        fclose(fp);
         throw PNGException("Can't handle interlaced PNG");
     }
 
@@ -123,7 +130,6 @@ Image Image::loadPNG(const std::string &filename) {
     }
 
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    fclose(fp);
 
     return image;
 }

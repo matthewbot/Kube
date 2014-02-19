@@ -4,6 +4,7 @@
 #include <vector>
 #include <stdexcept>
 #include <ostream>
+#include <istream>
 #include <cstdint>
 
 struct __attribute__((__packed__)) Pixel {
@@ -43,11 +44,13 @@ public:
 
     Image flipped() const;
 
+    void blit(const Image &src, unsigned int x, unsigned int y);
+    
     class PNGException : public std::runtime_error {
     public:
         using std::runtime_error::runtime_error;
     };
-    static Image loadPNG(const std::string &png);
+    static Image loadPNG(std::istream &in);
 
 private:
     unsigned int width;
