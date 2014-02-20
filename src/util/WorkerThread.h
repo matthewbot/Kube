@@ -10,6 +10,8 @@ class WorkerThread {
 public:
     WorkerThread();
     ~WorkerThread();
+
+    void stop();
     
     void post(std::function<void ()> func, int priority=0) {
 	queue.post(std::move(func), priority);

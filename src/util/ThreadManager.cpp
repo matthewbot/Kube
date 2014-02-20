@@ -5,6 +5,14 @@ ThreadManager::ThreadManager() :
     threads(std::thread::hardware_concurrency()),
     next_num(0) { }
 
+void ThreadManager::stopThreads() {
+    for (auto &thread : threads) {
+        thread.stop();
+    }
+
+    main.stop();
+}
+
 void ThreadManager::postWork(std::function<void ()> func, int priority) {
     getNextThread()->post(std::move(func), priority);
 }

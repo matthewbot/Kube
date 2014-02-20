@@ -2,52 +2,36 @@
 #define GRAPHICSSYSTEM_H
 
 #include "util/ThreadManager.h"
-#include "World.h"
-#include "gfx/ChunkMeshManager.h"
 #include "gfx/Window.h"
 #include "gfx/Renderer.h"
-#include "gfx/Shader.h"
-#include "gfx/Texture.h"
-#include "gfx/Font.h"
+#include "gfx/View.h"
+#include <functional>
 
 class GraphicsSystem {
 public:
-    typedef std::function<void ()> InputCallback;
+    GraphicsSystem(ThreadManager &tm);
     
-    GraphicsSystem(const World &world,
-                   ThreadManager &tm);
-
+    typedef std::function<void ()> InputCallback;
     void runRenderLoop(std::function<bool ()> input_callback);
     
+    void pushView(std::unique_ptr<View> view);
+    template <typename ViewT>
+    ViewT &getView(unsigned int pos) {
+        return *static_cast<ViewT *>(views[pos].get());
+    }
+
     Window &getWindow() { return window; }
-    const Window &getWindow() const { return window; }
-
-    RPYCamera &getCamera() { return camera; }
-    const RPYCamera &getCamera() const { return camera; }
-
-    PerspectiveProjection getPerspectiveProjection();
-    OrthoProjection getOrthoProjection();
-
+    Renderer &getRenderer() { return renderer; }
+    
 private:
     void renderFrame();
-    void renderChunks();
-    void renderText();
     void waitTimer();
 
-    const World &world;
     ThreadManager &tm;
-    
     Window window;
     Renderer renderer;
-    RPYCamera camera;
-    
-    ShaderProgram prgm2d;
-    ShaderProgram prgm3d;
-    ArrayTexture blocktex;
-    Sampler sampler;
-    Font font;
-    Mesh fontmesh;
-    ChunkMeshManager chunkmeshes;
+
+    std::vector<std::unique_ptr<View>> views;
 };
 
 #endif

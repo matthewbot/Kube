@@ -16,6 +16,8 @@ public:
     void stopMain() {
 	main.stop();
     }
+
+    void stopThreads();
     
     void postWork(std::function<void ()> func, int priority=0);
     void postWork(std::function<void (WorkerThread &)> func, int priority=0);

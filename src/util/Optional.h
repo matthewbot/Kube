@@ -62,6 +62,12 @@ public:
         callConstructor(std::forward<U>(val));
         return *this;
     }
+
+    template <typename... Vals>
+    void emplace(Vals &&... vals) {
+        callDestructor();
+        callConstructor(std::forward<Vals>(vals)...);
+    }
     
     explicit operator bool() const { return ptr != nullptr; }
 
@@ -95,9 +101,9 @@ public:
     }
     
 private:
-    template <typename U>
-    void callConstructor(U &&val) {
-        ptr = new (&buf) T(std::forward<U>(val));
+    template <typename... Vals>
+    void callConstructor(Vals &&... vals) {
+        ptr = new (&buf) T(std::forward<Vals>(vals)...);
     }
 
     void callDestructor() {

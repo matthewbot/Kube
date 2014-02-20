@@ -66,6 +66,7 @@ std::pair<glm::vec3, glm::vec3> unproject(const glm::mat4 &projection,
                                           const glm::mat4 &view,
                                           const glm::vec2 &window_pos);
 
+// TODO eliminate entirely in favor of dedicated methods on ShaderProgram?
 class Renderer {
 public:
     Renderer();

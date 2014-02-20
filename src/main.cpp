@@ -13,6 +13,9 @@
 #include "gfx/Renderer.h"
 #include "perlin.h"
 #include "gfx/Font.h"
+#include "gfx/TextureArrayBuilder.h"
+#include "gfx/WorldView.h"
+#include "gfx/DebugView.h"
 #include <unistd.h>
 #include <iostream>
 #include <tuple>
@@ -25,6 +28,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <fstream>
 
 const float pi = static_cast<float>(M_PI);
 
@@ -111,6 +115,40 @@ static void buildMetaTables(Lua &lua) {
         .function("makeType", &BlockTypeRegistry::makeType);
 }
 
+static std::unique_ptr<View> buildWorldView(ThreadManager &tm, World &world) {
+    auto load_png_file = [](const char *name) -> Image {
+        std::ifstream file(name);
+        return Image::loadPNG(file);
+    };    
+    
+    TextureArrayBuilder blocktex_builder{16, 16};
+    blocktex_builder.addImage(load_png_file("stone.png"));
+    blocktex_builder.addImage(load_png_file("dirt.png"));
+    blocktex_builder.addImage(load_png_file("grass.png"));
+    blocktex_builder.addImage(load_png_file("grass_side.png"));
+
+    Sampler sampler;
+    sampler.setFilter(Sampler::NEAREST);
+
+    Shader vert{Shader::Type::VERTEX, "vert.glsl"};
+    Shader frag{Shader::Type::FRAGMENT, "frag.glsl"};
+    ShaderProgram prgm{vert, frag};
+    
+    return std::unique_ptr<View>{new WorldView{
+        tm, world, blocktex_builder.build(), std::move(sampler), std::move(prgm)}};
+}
+
+static std::unique_ptr<View> buildDebugView() {
+    Font font{"font.fnt"};
+
+    Shader vert{Shader::Type::VERTEX, "vert2d.glsl"};
+    Shader frag{Shader::Type::FRAGMENT, "frag2d.glsl"};
+    ShaderProgram prgm{vert, frag};
+
+    return std::unique_ptr<View>{new DebugView{
+        std::move(font), std::move(prgm)}};
+}
+
 int main(int argc, char **argv) {
     ThreadManager tm;
 
@@ -141,14 +179,20 @@ int main(int argc, char **argv) {
     };
     regenWorld();
 
-    GraphicsSystem gfx{world, tm};
-    gfx.getCamera().pos.z = 40;
+    GraphicsSystem gfx{tm};
+    gfx.pushView(buildWorldView(tm, world));
+    gfx.pushView(buildDebugView());
+
+    auto &worldview = gfx.getView<WorldView>(0);
+//    auto &debugview = gfx.getView<DebugView>(1);
+
+    worldview.getCamera().pos.z = 40;
 
     RPYCameraManipulator camera_manipulator{.002, 5};
 
     gfx.runRenderLoop([&]() -> bool {
         Window &window = gfx.getWindow();
-        RPYCamera &camera = gfx.getCamera();
+        RPYCamera &camera = worldview.getCamera();
 
         if (window.isClosed()) {
 	    return false;
@@ -163,7 +207,7 @@ int main(int argc, char **argv) {
         if (window.isMousePressed(MouseButton::RIGHT)) {
             glm::vec3 pos, dir;
             std::tie(pos, dir) = unproject(
-                gfx.getPerspectiveProjection().getMatrix(),
+                worldview.getProjection(window).getMatrix(),
                 camera.getMatrix(),
                 window.getNDCPos(window.getMousePos()));
             auto pick = world.getChunks().pick(pos, dir, 10);
@@ -193,5 +237,7 @@ int main(int argc, char **argv) {
 	return true;
     });
 
+    tm.stopThreads();
+    
     return 0;
 }

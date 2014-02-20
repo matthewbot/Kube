@@ -1,7 +1,7 @@
 #include "TextureArrayBuilder.h"
 #include <cassert>
 
-TextureArrayBuilder::TextureArrayBuilder(int w, int h) : w(w), h(h) { }
+TextureArrayBuilder::TextureArrayBuilder(unsigned int w, unsigned int h) : w(w), h(h) { }
 
 unsigned int TextureArrayBuilder::addImage(const Image &newimage) {
     assert(newimage.getWidth() == w);

@@ -14,6 +14,7 @@ public:
 
     Window &operator=(const Window &) = delete;
 
+    // TODO input system
     bool isMousePressed(MouseButton btn) const;
     bool isKeyPressed(char ch) const;
     bool isShiftPressed() const;

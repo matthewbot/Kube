@@ -6,15 +6,15 @@
 
 class TextureArrayBuilder {
 public:
-    TextureArrayBuilder(int w, int h);
+    TextureArrayBuilder(unsigned int w, unsigned int h);
 
     unsigned int addImage(const Image &newimage);
     
     ArrayTexture build() const;
     
 private:
-    int w;
-    int h;
+    unsigned int w;
+    unsigned int h;
     Image image;
 };
 
