@@ -2,8 +2,8 @@
 #include "tesselate.h"
 #include <iostream>
 
-ChunkMeshManager::ChunkMeshManager(ThreadManager &tm) :
-    tm(tm) { }
+ChunkMeshManager::ChunkMeshManager(ThreadManager &tm, BlockVisualRegistry blockvisuals) :
+    tm(tm), blockvisuals(std::move(blockvisuals)) { }
 
 const Mesh *ChunkMeshManager::getMesh(const glm::ivec3 &pos) const {
     // updateMesh doesn't modify anything if chunk is empty
@@ -47,7 +47,7 @@ void ChunkMeshManager::asyncGenerateMesh(const glm::ivec3 &pos,
 
     tm.postWork([=, chunk = std::move(chunk)](WorkerThread &wt) {
         auto &builder = wt.cacheLocal<MeshBuilder>("MeshBuilder");
-        tesselate(builder, *chunk);
+        blockvisuals.tesselate(builder, *chunk);
         tm.postMain([=,
 		     chunk = std::move(chunk)]() {
             std::cout << "Uploading mesh at "

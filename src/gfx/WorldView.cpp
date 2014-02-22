@@ -6,12 +6,13 @@ WorldView::WorldView(ThreadManager &tm,
                      const World &world,
                      ArrayTexture tex,
                      Sampler sampler,
-                     ShaderProgram prgm) :
+                     ShaderProgram prgm,
+                     BlockVisualRegistry blockvisuals) :
     world(world),
     tex(std::move(tex)),
     sampler(std::move(sampler)),
     prgm(std::move(prgm)),
-    chunkmeshes(tm)
+    chunkmeshes(tm, std::move(blockvisuals))
 { }
 
 void WorldView::render(Window &window) {

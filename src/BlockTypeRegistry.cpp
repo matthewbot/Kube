@@ -29,10 +29,7 @@ const BlockType &BlockTypeRegistry::getType(BlockType::ID id) const {
 void BlockTypeRegistry::dump(std::ostream &out) const {
     for (auto &btype : types_by_id) {
         out << btype.id << ' '
-            << btype.name << ' ';
-        for (Face face : all_faces) {
-            out << btype.face_texes[face] << ' ';
-        }
-        out << std::endl;
+            << btype.name << ' '
+            << std::endl;
     }
 }

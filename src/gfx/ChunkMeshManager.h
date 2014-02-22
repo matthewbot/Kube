@@ -1,10 +1,11 @@
 #ifndef CHUNKMESHMANAGER_H
 #define CHUNKMESHMANAGER_H
 
-#include "util/ThreadManager.h"
 #include "Chunk.h"
-#include "Mesh.h"
+#include "util/ThreadManager.h"
 #include "util/math.h"
+#include "gfx/BlockVisualRegistry.h"
+#include "gfx/Mesh.h"
 
 #include <vector>
 #include <utility>
@@ -14,7 +15,7 @@
 
 class ChunkMeshManager {
 public:
-    ChunkMeshManager(ThreadManager &tm);
+    ChunkMeshManager(ThreadManager &tm, BlockVisualRegistry blockvisuals);
 
     const Mesh *getMesh(const glm::ivec3 &pos) const;
     const Mesh *updateMesh(const glm::ivec3 &pos,
@@ -24,6 +25,7 @@ public:
     
 private:
     ThreadManager &tm;
+    BlockVisualRegistry blockvisuals;
 
     void asyncGenerateMesh(const glm::ivec3 &pos,
                            std::shared_ptr<const Chunk> chunk);

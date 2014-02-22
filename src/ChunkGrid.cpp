@@ -40,7 +40,9 @@ Optional<glm::ivec3> ChunkGrid::pick(const glm::vec3 &startpos,
     while (range >= 0) {
         glm::ivec3 ipos = static_cast<glm::ivec3>(floorVec(pos));
         auto optblock = findBlock(ipos);
-        if (optblock && optblock->getType().visible) {
+
+        // TODO once WorldView is doing this, we need to involve the BlockVisual here
+        if (optblock && optblock->getType().solid) {
             return ipos;
         }
 

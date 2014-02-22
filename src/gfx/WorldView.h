@@ -15,7 +15,8 @@ public:
               const World &world,
               ArrayTexture tex,
               Sampler sampler,
-              ShaderProgram prgm);
+              ShaderProgram prgm,
+              BlockVisualRegistry blockvisuals);
 
     RPYCamera &getCamera() { return camera; }
     const RPYCamera &getCamera() const { return camera; }

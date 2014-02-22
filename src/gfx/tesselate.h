@@ -4,9 +4,7 @@
 #include "gfx/Mesh.h"
 #include <string>
 
-class Chunk;
-void tesselate(MeshBuilder &builder, const Chunk &chunk);
-
+// TODO back to Font
 class Font;
 void tesselate(MeshBuilder &builder, const Font &font, const std::string &str);
 

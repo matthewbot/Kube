@@ -106,15 +106,14 @@ static void buildMetaTables(Lua &lua) {
     
     MetatableBuilder<BlockTypeInfo>(lua, "BlockTypeInfo")
         .constructor("new")
-        .field("solid", &BlockTypeInfo::solid)
-        .field("visible", &BlockTypeInfo::visible)
-        .field_ref("face_texes", &BlockTypeInfo::face_texes);
+        .field("solid", &BlockTypeInfo::solid);
      
     MetatableBuilder<BlockTypeRegistry>(lua, "BlockTypeRegistry")
         .function("makeType", &BlockTypeRegistry::makeType);
 }
 
 static std::unique_ptr<View> buildWorldView(ThreadManager &tm, World &world) {
+    // TODO move to Lua
     auto load_png_file = [](const char *name) -> Image {
         std::ifstream file(name);
         return Image::loadPNG(file);
@@ -126,6 +125,17 @@ static std::unique_ptr<View> buildWorldView(ThreadManager &tm, World &world) {
     blocktex_builder.addImage(load_png_file("grass.png"));
     blocktex_builder.addImage(load_png_file("grass_side.png"));
 
+    BlockVisualRegistry blockvisuals(blocktex_builder.build(), 4);
+    blockvisuals.setVisual(1, std::unique_ptr<BlockVisual>{
+            new SimpleBlockVisual{3}});
+    blockvisuals.setVisual(2, std::unique_ptr<BlockVisual>{
+            new SimpleBlockVisual{2}});
+
+    std::unique_ptr<SimpleBlockVisual> grassvis{new SimpleBlockVisual{0}};
+    grassvis->face_texes[Face::TOP] = 1;
+    grassvis->face_texes[Face::BOTTOM] = 2;
+    blockvisuals.setVisual(3, std::move(grassvis));
+    
     Sampler sampler;
     sampler.setFilter(Sampler::NEAREST);
 
@@ -133,8 +143,14 @@ static std::unique_ptr<View> buildWorldView(ThreadManager &tm, World &world) {
     Shader frag{Shader::Type::FRAGMENT, "frag.glsl"};
     ShaderProgram prgm{vert, frag};
     
-    return std::unique_ptr<View>{new WorldView{
-        tm, world, blocktex_builder.build(), std::move(sampler), std::move(prgm)}};
+    return std::unique_ptr<View>{
+        new WorldView{
+            tm,
+            world,
+            blocktex_builder.build(),
+            std::move(sampler),
+            std::move(prgm),
+            std::move(blockvisuals)}};
 }
 
 static std::unique_ptr<View> buildDebugView() {

@@ -8,8 +8,6 @@
 
 struct BlockTypeInfo {
     bool solid = true;
-    bool visible = true;
-    FaceMap<unsigned int> face_texes;
 };
 
 struct BlockType : public BlockTypeInfo {
