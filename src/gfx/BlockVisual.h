@@ -5,8 +5,6 @@
 #include "gfx/Mesh.h"
 #include "Chunk.h"
 
-class BlockVisualRegistry;
-
 class BlockVisual {
 public:
     virtual ~BlockVisual() { }

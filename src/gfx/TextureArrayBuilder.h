@@ -3,12 +3,14 @@
 
 #include "gfx/Image.h"
 #include "gfx/Texture.h"
+#include <unordered_map>
 
 class TextureArrayBuilder {
 public:
     TextureArrayBuilder(unsigned int w, unsigned int h);
 
-    unsigned int addImage(const Image &newimage);
+    // TODO resource system
+    unsigned int addImage(const std::string &filename);
     
     ArrayTexture build() const;
     
@@ -16,6 +18,8 @@ private:
     unsigned int w;
     unsigned int h;
     Image image;
+
+    std::unordered_map<std::string, unsigned int> image_texnums;
 };
 
 #endif

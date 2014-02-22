@@ -114,16 +114,11 @@ static void buildMetaTables(Lua &lua) {
 
 static std::unique_ptr<View> buildWorldView(ThreadManager &tm, World &world) {
     // TODO move to Lua
-    auto load_png_file = [](const char *name) -> Image {
-        std::ifstream file(name);
-        return Image::loadPNG(file);
-    };    
-    
     TextureArrayBuilder blocktex_builder{16, 16};
-    blocktex_builder.addImage(load_png_file("stone.png"));
-    blocktex_builder.addImage(load_png_file("dirt.png"));
-    blocktex_builder.addImage(load_png_file("grass.png"));
-    blocktex_builder.addImage(load_png_file("grass_side.png"));
+    blocktex_builder.addImage("stone.png");
+    blocktex_builder.addImage("dirt.png");
+    blocktex_builder.addImage("grass.png");
+    blocktex_builder.addImage("grass_side.png");
 
     BlockVisualRegistry blockvisuals(blocktex_builder.build(), 4);
     blockvisuals.setVisual(1, std::unique_ptr<BlockVisual>{
