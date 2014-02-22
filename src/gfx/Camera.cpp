@@ -1,4 +1,4 @@
-#include "gfx/Renderer.h"
+#include "gfx/Camera.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -98,48 +98,4 @@ bool RPYCameraManipulator::update(RPYCamera &camera, const Window &window, float
         updated = true;
 
     return updated;
-}
-
-Renderer::Renderer() :
-    view{1.0},
-    prgm(nullptr),
-    prgm_dirty(false) { }
-
-void Renderer::setProjection(const glm::mat4 &projection) {
-    this->projection = projection;
-    prgm_dirty = true;
-}
-
-void Renderer::setView(const glm::mat4 &view) {
-    this->view = view;
-    prgm_dirty = true;
-}
-
-void Renderer::clearCamera() {
-    view = glm::mat4{1};
-}
-
-void Renderer::setProgram(ShaderProgram &prgm) {
-    this->prgm = &prgm;
-    prgm_dirty = true;
-}
-
-void Renderer::render(const glm::mat4 &model, const Mesh &mesh) {
-    setup_program(model);
-    mesh.draw();
-}
-
-void Renderer::setup_program(const glm::mat4 &model) {
-    if (prgm_dirty) {
-        glUseProgram(prgm->getID());
-    }
-    glm::mat4 modelview = view*model;
-    glUniformMatrix4fv(prgm->getUniform("modelview"),
-                       1, GL_FALSE, glm::value_ptr(modelview));
-    if (prgm_dirty) {
-        glUniformMatrix4fv(prgm->getUniform("perspective"),
-                           1, GL_FALSE, glm::value_ptr(projection));
-    }
-
-    prgm_dirty = false;
 }

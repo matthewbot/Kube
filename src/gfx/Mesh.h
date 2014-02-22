@@ -3,6 +3,7 @@
 
 #include "gfx/Buffer.h"
 #include "gfx/VertexArrayObject.h"
+#include "gfx/Shader.h"
 
 #include <glm/glm.hpp>
 #include <initializer_list>
@@ -33,7 +34,7 @@ public:
 
     explicit operator bool() const { return !!vao; }
 
-    void draw() const;
+    void draw(const ShaderProgram &prgm) const;
 
 private:
     unsigned int vertcount;

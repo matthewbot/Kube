@@ -4,13 +4,14 @@
 #include "gfx/View.h"
 #include "gfx/Font.h"
 #include "gfx/Shader.h"
+#include "gfx/Camera.h"
 
 class DebugView : public View {
 public:
     DebugView(Font font,
               ShaderProgram prgm);
 
-    virtual void render(Renderer &renderer, Window &window);
+    virtual void render(Window &window);
     
 private:
     Font font;

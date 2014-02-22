@@ -10,7 +10,6 @@
 #include "gfx/Image.h"
 #include "gfx/Texture.h"
 #include "gfx/Window.h"
-#include "gfx/Renderer.h"
 #include "perlin.h"
 #include "gfx/Font.h"
 #include "gfx/TextureArrayBuilder.h"

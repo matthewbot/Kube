@@ -98,7 +98,8 @@ Mesh::Mesh(unsigned int vertcount, const MeshFormat &format, Buffer buf_, Buffer
     glBindVertexArray(0);
 }
 
-void Mesh::draw() const {
+void Mesh::draw(const ShaderProgram &prgm) const {
+    glUseProgram(prgm.getID());
     glBindVertexArray(vao.getID());
     glDrawElements(GL_TRIANGLES, vertcount, GL_UNSIGNED_INT,
                    reinterpret_cast<void *>(0));

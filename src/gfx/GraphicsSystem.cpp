@@ -24,7 +24,7 @@ void GraphicsSystem::renderFrame() {
     window.clear();
 
     for (auto &viewptr : views) {
-        viewptr->render(renderer, window);
+        viewptr->render(window);
     }
 
     window.swapBuffers();

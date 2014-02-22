@@ -18,7 +18,7 @@ void BaseTexture::deleteId() {
 
 void Texture::setImage(const Image &img) {
     genId();
-    bind();
+    bind(0);
 
     Image flipped = img.flipped();
     glTexImage2D(GL_TEXTURE_2D, 0,
@@ -30,13 +30,14 @@ void Texture::setImage(const Image &img) {
     height = flipped.getHeight();
 }
 
-void Texture::bind() const {
+void Texture::bind(unsigned int id) const {
+    glActiveTexture(GL_TEXTURE0 + id);
     glBindTexture(GL_TEXTURE_2D, id);
 }
 
 void ArrayTexture::setImage(const Image &img, unsigned int layers) {
     genId();
-    bind();
+    bind(0);
 
     Image flipped = img.flipped();
     glTexImage3D(GL_TEXTURE_2D_ARRAY, 0,
@@ -49,7 +50,8 @@ void ArrayTexture::setImage(const Image &img, unsigned int layers) {
     this->layers = layers;
 }
 
-void ArrayTexture::bind() const {
+void ArrayTexture::bind(unsigned int id) const {
+    glActiveTexture(GL_TEXTURE0 + id);
     glBindTexture(GL_TEXTURE_2D_ARRAY, id);
 }
 

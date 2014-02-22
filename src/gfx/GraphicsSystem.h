@@ -3,7 +3,7 @@
 
 #include "util/ThreadManager.h"
 #include "gfx/Window.h"
-#include "gfx/Renderer.h"
+#include "gfx/Camera.h"
 #include "gfx/View.h"
 #include <functional>
 
@@ -21,7 +21,6 @@ public:
     }
 
     Window &getWindow() { return window; }
-    Renderer &getRenderer() { return renderer; }
     
 private:
     void renderFrame();
@@ -29,7 +28,6 @@ private:
 
     ThreadManager &tm;
     Window window;
-    Renderer renderer;
 
     std::vector<std::unique_ptr<View>> views;
 };

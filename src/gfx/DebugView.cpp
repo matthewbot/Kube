@@ -8,19 +8,20 @@ DebugView::DebugView(Font font,
     prgm(std::move(prgm))
 { }
 
-void DebugView::render(Renderer &renderer, Window &window) {
+void DebugView::render(Window &window) {
     std::stringstream buf;
     buf << "Hello World";
     
     tesselate(builder, font, buf.str());
     Mesh fontmesh = builder.build();
 
-    renderer.setProjection(getProjection(window));
-    renderer.clearCamera();
-    renderer.setProgram(prgm);
-    renderer.setTexture(0, font.getTexture(), sampler);
+    prgm.setUniform("perspective", getProjection(window).getMatrix());
+
+    font.getTexture().bind(0);
+    sampler.bind(0);
+    
     glDisable(GL_DEPTH_TEST);
-    renderer.render(glm::mat4{1}, fontmesh);
+    fontmesh.draw(prgm);
     glEnable(GL_DEPTH_TEST);
 }
 

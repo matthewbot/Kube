@@ -28,11 +28,11 @@ private:
 
 class ShaderProgram : public IDBase<ShaderProgram> {
     friend class IDBase<ShaderProgram>;
-public:
+public:    
     ShaderProgram() { }
     ShaderProgram(const std::initializer_list<std::reference_wrapper<const Shader>> &shaders);
 
-    int getUniform(const std::string &name);
+    void setUniform(const std::string &name, const glm::mat4 &mat);
 
 private:
     void deleteId();

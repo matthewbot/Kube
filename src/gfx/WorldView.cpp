@@ -1,4 +1,4 @@
-#include "WorldView.h"
+#include "gfx/WorldView.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <sstream>
 
@@ -14,11 +14,13 @@ WorldView::WorldView(ThreadManager &tm,
     chunkmeshes(tm)
 { }
 
-void WorldView::render(Renderer &renderer, Window &window) {
-    renderer.setCamera(camera);
-    renderer.setProjection(getProjection(window));
-    renderer.setProgram(prgm);
-    renderer.setTexture(0, tex, sampler);
+void WorldView::render(Window &window) {
+    prgm.setUniform("perspective", getProjection(window).getMatrix());
+
+    tex.bind(0);
+    sampler.bind(0);
+
+    const glm::mat4 view = camera.getMatrix();
 
     glm::ivec3 centerchunkpos =
         ChunkGrid::posToChunkBlock(glm::ivec3{camera.pos}).first;
@@ -35,7 +37,8 @@ void WorldView::render(Renderer &renderer, Window &window) {
                 
                 glm::mat4 model{1};
                 model = glm::translate(model, glm::vec3{32*chunkpos});
-                renderer.render(model, *meshptr);
+                prgm.setUniform("modelview", view*model);
+                meshptr->draw(prgm);
             }
         }
     }

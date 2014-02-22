@@ -1,6 +1,7 @@
 #include "gfx/Shader.h"
 #include <GL/glew.h>
 #include <GL/glfw.h>
+#include <glm/gtc/type_ptr.hpp>
 #include <algorithm>
 #include <sstream>
 #include <iostream>
@@ -64,8 +65,10 @@ ShaderProgram::ShaderProgram(const std::initializer_list<std::reference_wrapper<
     }
 }
 
-int ShaderProgram::getUniform(const std::string &name) {
-    return glGetUniformLocation(id, name.c_str());
+void ShaderProgram::setUniform(const std::string &name, const glm::mat4 &mat) {
+    auto loc = glGetUniformLocation(id, name.c_str());
+    glUseProgram(id);
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(mat));
 }
 
 void ShaderProgram::deleteId() {

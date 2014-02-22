@@ -6,6 +6,7 @@
 #include "gfx/Texture.h"
 #include "gfx/Shader.h"
 #include "gfx/ChunkMeshManager.h"
+#include "gfx/Camera.h"
 #include "World.h"
 
 class WorldView : public View {
@@ -19,7 +20,7 @@ public:
     RPYCamera &getCamera() { return camera; }
     const RPYCamera &getCamera() const { return camera; }
 
-    virtual void render(Renderer &renderer, Window &window);
+    virtual void render(Window &window);
 
     PerspectiveProjection getProjection(Window &window); // TODO
 

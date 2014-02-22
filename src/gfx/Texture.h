@@ -20,7 +20,6 @@ private:
 };
 
 class Texture : public BaseTexture {
-    friend class Renderer;
 public:
     Texture() : width(0), height(0) { }
     Texture(const Image &img) { setImage(img); }
@@ -30,14 +29,13 @@ public:
     
     void setImage(const Image &img);
 
-private:
-    void bind() const;
+    void bind(unsigned int pos) const;
 
+private:
     unsigned int width, height;
 };
 
 class ArrayTexture : public BaseTexture {
-    friend class Renderer;
 public:
     ArrayTexture() : width(0), height(0), layers(0) { }
     ArrayTexture(const Image &img, unsigned int layers) { setImage(img, layers); }
@@ -48,16 +46,15 @@ public:
     
     void setImage(const Image &img, unsigned int layers);
 
-private:
-    void bind() const;
+    void bind(unsigned int pos) const;
 
+private:
     unsigned int width, height;
     unsigned int layers;
 };
 
 class Sampler : public IDBase<Sampler> {
     friend class IDBase<Sampler>;
-    friend class Renderer;
 public:
     enum Filter {
         NEAREST,
@@ -70,9 +67,9 @@ public:
     void setFilter(Filter linear);
     void setWrap(bool wrap);
 
-private:
     void bind(unsigned int pos) const;
     
+private:
     void deleteId();
 };
 
