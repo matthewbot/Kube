@@ -7,6 +7,7 @@
 #include <utility>
 #include <functional>
 #include <stdexcept>
+#include <vector>
 
 // pushCValue
 namespace detail {
@@ -61,11 +62,32 @@ namespace detail {
     };
 
     template <typename T>
+    struct PushClass {
+        template <typename U>
+        static void exec(lua_State *L, U &&val) {
+            PointerWrapper<T>::push(L, std::unique_ptr<T>{new T{std::forward<U>(val)}});            
+        }
+    };
+
+    template <typename T>
+    struct PushClass<std::vector<T>> {
+        static void exec(lua_State *L, const std::vector<T> &val) {
+            lua_createtable(L, val.size(), 0);
+            for (unsigned int i = 0; i < val.size(); i++) {
+                lua_pushinteger(L, i+1);
+                pushCValue(L, val[i]);
+                lua_settable(L, -3);
+            }
+        }
+    };
+    
+    template <typename T>
     struct PushCValue<T, typename std::enable_if<std::is_class<T>::value &&
                                                  !IsPointerWrapperType<T>::value &&
                                                  !IsReferenceWrapper<T>::value>::type> {
-        static void exec(lua_State *L, const T &val) {
-            PointerWrapper<T>::push(L, std::unique_ptr<T>{new T(val)});
+        template <typename U>
+        static void exec(lua_State *L, U &&val) {
+            PushClass<T>::exec(L, std::forward<U>(val));
         }
     };
 
@@ -112,6 +134,14 @@ void pushCValues(lua_State *L, Ts &&... vals) {
 
 // toCValue
 namespace detail {
+    inline int fixIndex(lua_State *L, int index) {
+        if (index >= 0) {
+            return index;
+        } else {
+            return lua_gettop(L) + index + 1;
+        }
+    }
+    
     template <typename T>
     void throwException(int argn, std::string msg = std::string{}) {
         auto &expected = typeid(typename std::decay<T>::type);
@@ -179,10 +209,36 @@ namespace detail {
     };
 
     template <typename T>
+    struct ToClass {
+        static T exec(lua_State *L, int index) {
+            return ToCValue<const T &>::exec(L, index);
+        }
+    };
+
+    template <typename T>
+    struct ToClass<std::vector<T>> {
+        static std::vector<T> exec(lua_State *L, int index) {
+            if (lua_type(L, index) != LUA_TTABLE) {
+                throwException<T>(index, "Was not given a table");
+            }
+
+            auto len = lua_objlen(L, index);            
+            std::vector<T> vals;
+            vals.reserve(len);
+            for (unsigned int i = 0; i < len; i++) {
+                lua_pushinteger(L, i+1);
+                lua_gettable(L, index);
+                vals.emplace_back(toCValue<T>(L, -1));
+            }
+            return vals;
+        }
+    };
+    
+    template <typename T>
     struct ToCValue<T, typename std::enable_if<std::is_class<T>::value &&
                                                !IsPointerWrapperType<T>::value>::type> {
         static T exec(lua_State *L, int index) {
-            return ToCValue<const T &>::exec(L, index);
+            return ToClass<T>::exec(L, index);
         }
     };
     
@@ -204,7 +260,7 @@ namespace detail {
             return *ptr;
         }        
     };
-
+    
     template <typename T>
     struct ToCValue<const T &, typename std::enable_if<std::is_class<T>::value &&
                                                        !IsPointerWrapperType<T>::value>::type> {
@@ -224,7 +280,7 @@ namespace detail {
             return *ptr;
         }        
     };
-    
+
     template <typename T>
     struct ToCValue<T, typename std::enable_if<IsPointerWrapperType<T>::value &&
                                                !std::is_pointer<T>::value>::type> {
@@ -271,7 +327,7 @@ namespace detail {
 
 template <typename T>
 T toCValue(lua_State *L, int index) {
-    return detail::template ToCValue<T>::exec(L, index);
+    return detail::template ToCValue<T>::exec(L, detail::fixIndex(L, index));
 }
 
 namespace detail {

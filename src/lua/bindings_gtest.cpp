@@ -208,3 +208,20 @@ TEST_F(BindingsTest, InvokeWithLuaArgs) {
     auto tmp = invokeWithLuaArgs<const std::string &, Foo>(lua, 2, &invokeStringFoo);
     EXPECT_EQ(5, tmp);
 }
+
+TEST_F(BindingsTest, PushTables) {
+    pushCValue(lua, std::vector<int>{1, 2, 3, 4});
+    EXPECT_EQ(LUA_TTABLE, lua_type(lua, -1));
+    EXPECT_EQ(4, lua_objlen(lua, -1));
+
+    pushCValue(lua, std::vector<std::string>{"a", "b", "c"});
+    lua_pushinteger(lua, 3);
+    lua_gettable(lua, -2);
+    EXPECT_STREQ("c", lua_tostring(lua, -1));
+}
+
+TEST_F(BindingsTest, PushToTables) {
+    std::vector<int> vals{8, 6, 7, 5, 3, 0, 9};
+    pushCValue(lua, vals);
+    EXPECT_EQ(vals, toCValue<std::vector<int>>(lua, -1));
+}
