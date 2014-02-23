@@ -1,35 +1,34 @@
 #include "BlockVisualRegistry.h"
 
-BlockVisualRegistry::BlockVisualRegistry(ArrayTexture tex, BlockType::ID maxid) :
-    tex(std::move(tex)),
-    entries(maxid)
+BlockVisualRegistry::BlockVisualRegistry(unsigned int block_tex_size) :
+    block_tex_builder(block_tex_size, block_tex_size)
 { }
 
-void BlockVisualRegistry::updateTexture(ArrayTexture tex) {
-    this->tex = std::move(tex);
-}
-
-void BlockVisualRegistry::setVisual(BlockType::ID id, std::unique_ptr<BlockVisual> visual) {
-    if (id >= entries.size()) {
-        entries.resize(id);
+const BlockVisual *BlockVisualRegistry::makeVisual(BlockType::ID id, const BlockVisualInfo &info) {
+    if (id >= visuals.size()) {
+        visuals.resize(id+1);
     }
 
-    entries[id] = std::move(visual);
+    return (visuals[id] = info.buildVisual(block_tex_builder)).get();
+}
+
+const BlockVisual *BlockVisualRegistry::getVisual(BlockType::ID id) const {
+    if (id >= visuals.size()) {
+        return nullptr;
+    } else {
+        return visuals[id].get();
+    }
 }
 
 bool BlockVisualRegistry::hasVisual(BlockType::ID id) const {
     return getVisual(id) != nullptr;
 }
 
-const BlockVisual *BlockVisualRegistry::getVisual(BlockType::ID id) const {
-    if (id >= entries.size()) {
-        return nullptr;
-    } else {
-        return entries[id].get();
-    }
+void BlockVisualRegistry::prepareTesselate() {
+    block_tex = block_tex_builder.build();
 }
 
-void BlockVisualRegistry::tesselate(MeshBuilder &builder, const Chunk &chunk) {
+void BlockVisualRegistry::tesselate(MeshBuilder &builder, const Chunk &chunk) const {
     builder.reset(MeshFormat{3, 3, 3});
 
     for (auto &pos : ChunkIndex::range) {
@@ -40,4 +39,3 @@ void BlockVisualRegistry::tesselate(MeshBuilder &builder, const Chunk &chunk) {
         }
     }
 }
-

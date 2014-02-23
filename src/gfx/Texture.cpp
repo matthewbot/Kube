@@ -39,7 +39,7 @@ void ArrayTexture::setImage(const Image &img, unsigned int layers) {
     genId();
     bind(0);
 
-    Image flipped = img.flipped();
+    Image flipped = img.flippedArray(layers);
     glTexImage3D(GL_TEXTURE_2D_ARRAY, 0,
                  flipped.getGamma() < 1 ? GL_SRGB8_ALPHA8 : GL_RGBA8,
                  flipped.getWidth(), flipped.getHeight()/layers, layers,

@@ -42,6 +42,25 @@ Image Image::flipped() const {
     return ret;
 }
 
+Image Image::flippedArray(unsigned int n) const {
+    Image ret;
+    ret.width = width;
+    ret.height = height;
+    ret.gamma = gamma;
+    ret.pixels.resize(pixels.size());
+
+    auto ah = height / n;
+    for (unsigned int y = 0; y < height; y++) {
+        auto dest = ret.pixels.begin() + ((y/ah)*ah + ah-1-(y%ah))*width;
+        auto begin = pixels.begin() + y*width;
+        auto end = begin + width;
+        std::copy(begin, end, dest);
+    }
+
+    return ret;
+}
+
+
 void Image::blit(const Image &src, unsigned int x, unsigned int y) {
     for (unsigned int sy = 0; sy < src.getHeight(); sy++) {
         for (unsigned int sx = 0; sx < src.getWidth(); sx++) {

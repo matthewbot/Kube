@@ -4,21 +4,20 @@
 
 WorldView::WorldView(ThreadManager &tm,
                      const World &world,
-                     ArrayTexture tex,
                      Sampler sampler,
                      ShaderProgram prgm,
                      BlockVisualRegistry blockvisuals) :
     world(world),
-    tex(std::move(tex)),
     sampler(std::move(sampler)),
     prgm(std::move(prgm)),
     chunkmeshes(tm, std::move(blockvisuals))
-{ }
+{
+}
 
 void WorldView::render(Window &window) {
     prgm.setUniform("perspective", getProjection(window).getMatrix());
 
-    tex.bind(0);
+    chunkmeshes.getBlockTex().bind(0);
     sampler.bind(0);
 
     const glm::mat4 view = camera.getMatrix();

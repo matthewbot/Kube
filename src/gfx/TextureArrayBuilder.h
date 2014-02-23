@@ -5,6 +5,7 @@
 #include "gfx/Texture.h"
 #include <unordered_map>
 
+// TODO ArrayTextureBuilder
 class TextureArrayBuilder {
 public:
     TextureArrayBuilder(unsigned int w, unsigned int h);

@@ -3,7 +3,10 @@
 #include <iostream>
 
 ChunkMeshManager::ChunkMeshManager(ThreadManager &tm, BlockVisualRegistry blockvisuals) :
-    tm(tm), blockvisuals(std::move(blockvisuals)) { }
+    tm(tm), blockvisuals(std::move(blockvisuals))
+{
+    this->blockvisuals.prepareTesselate();
+}
 
 const Mesh *ChunkMeshManager::getMesh(const glm::ivec3 &pos) const {
     // updateMesh doesn't modify anything if chunk is empty

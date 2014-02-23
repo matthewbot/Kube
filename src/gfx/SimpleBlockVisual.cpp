@@ -1,4 +1,11 @@
-#include "BlockVisual.h"
+#include "SimpleBlockVisual.h"
+
+SimpleBlockVisual::SimpleBlockVisual(const SimpleBlockVisualInfo &info,
+                                     TextureArrayBuilder &block_tex_builder) {
+    for (Face f : all_faces) {
+        face_texes[f] = block_tex_builder.addImage(info.face_tex_filenames[f]);
+    }
+}
 
 void SimpleBlockVisual::tesselate(MeshBuilder &builder,
                                   const Chunk &chunk,
@@ -14,12 +21,12 @@ void SimpleBlockVisual::tesselate(MeshBuilder &builder,
     const glm::vec3 tbr = bfl + glm::vec3{1, 1, 1};
     
     for (auto face : all_faces) {
-//        if (block.getType().solid) {
+        if (block.getType().solid) {
             auto adjpos = pos.adjacent(face);
             if (adjpos && chunk.getBlock(adjpos).getType().solid) {
                 continue;
             }
-//        }
+        }
             
         const auto texnum = face_texes[face];
         const glm::vec3 tex_bl{0, 0, texnum};

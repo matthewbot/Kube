@@ -15,6 +15,7 @@
 #include "gfx/TextureArrayBuilder.h"
 #include "gfx/WorldView.h"
 #include "gfx/DebugView.h"
+#include "gfx/SimpleBlockVisual.h"
 #include <unistd.h>
 #include <iostream>
 #include <tuple>
@@ -113,23 +114,14 @@ static void buildMetaTables(Lua &lua) {
 }
 
 static std::unique_ptr<View> buildWorldView(ThreadManager &tm, World &world) {
-    // TODO move to Lua
-    TextureArrayBuilder blocktex_builder{16, 16};
-    blocktex_builder.addImage("stone.png");
-    blocktex_builder.addImage("dirt.png");
-    blocktex_builder.addImage("grass.png");
-    blocktex_builder.addImage("grass_side.png");
+    BlockVisualRegistry blockvisuals{16};
+    blockvisuals.makeVisual(1, SimpleBlockVisualInfo{"stone.png"});
+    blockvisuals.makeVisual(2, SimpleBlockVisualInfo{"dirt.png"});
 
-    BlockVisualRegistry blockvisuals(blocktex_builder.build(), 4);
-    blockvisuals.setVisual(1, std::unique_ptr<BlockVisual>{
-            new SimpleBlockVisual{3}});
-    blockvisuals.setVisual(2, std::unique_ptr<BlockVisual>{
-            new SimpleBlockVisual{2}});
-
-    std::unique_ptr<SimpleBlockVisual> grassvis{new SimpleBlockVisual{0}};
-    grassvis->face_texes[Face::TOP] = 1;
-    grassvis->face_texes[Face::BOTTOM] = 2;
-    blockvisuals.setVisual(3, std::move(grassvis));
+    SimpleBlockVisualInfo grassinfo{"grass_side.png"};
+    grassinfo.face_tex_filenames[Face::TOP] = "grass.png";
+    grassinfo.face_tex_filenames[Face::BOTTOM] = "dirt.png";
+    blockvisuals.makeVisual(3, grassinfo);
     
     Sampler sampler;
     sampler.setFilter(Sampler::NEAREST);
@@ -142,7 +134,6 @@ static std::unique_ptr<View> buildWorldView(ThreadManager &tm, World &world) {
         new WorldView{
             tm,
             world,
-            blocktex_builder.build(),
             std::move(sampler),
             std::move(prgm),
             std::move(blockvisuals)}};

@@ -13,7 +13,6 @@ class WorldView : public View {
 public:
     WorldView(ThreadManager &tm,
               const World &world,
-              ArrayTexture tex,
               Sampler sampler,
               ShaderProgram prgm,
               BlockVisualRegistry blockvisuals);
@@ -27,7 +26,6 @@ public:
 
 private:
     const World &world;
-    ArrayTexture tex;
     Sampler sampler;
     ShaderProgram prgm;
 

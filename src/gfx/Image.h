@@ -43,6 +43,7 @@ public:
     const Pixel *getData() const { return &pixels.front(); }
 
     Image flipped() const;
+    Image flippedArray(unsigned int n) const;
 
     void blit(const Image &src, unsigned int x, unsigned int y);
     

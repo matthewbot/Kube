@@ -21,6 +21,9 @@ public:
     const Mesh *updateMesh(const glm::ivec3 &pos,
                            const std::shared_ptr<const Chunk> &chunk);
 
+    // TODO delete me after Meshes have textures
+    const ArrayTexture &getBlockTex() { return blockvisuals.getBlockTex(); }
+    
     void freeUnusedMeshes();
     
 private:
