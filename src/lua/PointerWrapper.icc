@@ -67,6 +67,23 @@ TPtr *PointerWrapper<T>::getPtr() {
     return ptrvar.template getPtr<TPtr>();
 }
 
+template <typename T> template <typename U>
+void PointerWrapper<T>::pushStaticCast(lua_State *L) {    
+    ptrvar.template match<void>(
+        [&](T *ptr) {
+            PointerWrapper<U>::push(L, static_cast<U *>(ptr));
+        },
+        [&](const std::shared_ptr<T> &shptr) {
+            PointerWrapper<U>::push(L, std::static_pointer_cast<U>(shptr));
+        },
+        [&](std::unique_ptr<T> &uptr) {
+            // if we're a unique pointer, we have to convert ourselves to shared
+            std::shared_ptr<T> shptr{std::move(uptr)};
+            ptrvar = shptr;
+            PointerWrapper<U>::push(L, std::static_pointer_cast<U>(shptr));
+        });
+}
+
 template <typename T>
 const std::string &PointerWrapper<T>::getMetatableName() {
     static const std::string name =

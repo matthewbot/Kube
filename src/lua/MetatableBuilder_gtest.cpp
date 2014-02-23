@@ -19,6 +19,13 @@ public:
     TestClass *nested;
 };
 
+class TestSubClass : public TestClass {
+public:
+    TestSubClass(int val, int otherval) : TestClass(val), otherval(otherval) { }
+
+    int otherval;
+};
+
 TEST(MetatableBuilder, Construct) {
     Lua lua;
     MetatableBuilder<TestClass>(lua, "TestClass")
@@ -211,4 +218,45 @@ TEST(MetatableBuilder, OpEquals) {
 
     ASSERT_EQ(0, luaL_loadstring(lua, testcode));
     ASSERT_EQ(0, lua_pcall(lua, 0, 0, 0));
+}
+
+TEST(MetatableBuilder, BaseClass) {
+    Lua lua;
+    MetatableBuilder<TestClass>(lua, "TestClass");
+    MetatableBuilder<TestSubClass>(lua, "TestSubClass")
+        .downCast<TestClass>("downCast");
+
+    TestSubClass sub{42, 7};
+    TestClass &base = sub;
+
+    auto subshared = std::make_shared<TestSubClass>(sub);
+    auto baseshared = std::static_pointer_cast<TestClass>(subshared);
+    
+    pushCValue(lua, std::ref(sub));
+    lua_setglobal(lua, "a1");
+
+    pushCValue(lua, std::unique_ptr<TestSubClass>{new TestSubClass{sub}});
+    lua_setglobal(lua, "a2");
+
+    pushCValue(lua, subshared);
+    lua_setglobal(lua, "a3");
+
+    static const char *testcode =
+        "b1 = a1:downCast()\n"
+        "b2 = a2:downCast()\n"
+        "b3 = a3:downCast()\n";
+    ASSERT_EQ(0, luaL_loadstring(lua, testcode));
+    ASSERT_EQ(0, lua_pcall(lua, 0, 0, 0));
+    
+    lua_getglobal(lua, "b1");
+    ASSERT_EQ(&base, toCValue<TestClass *>(lua, -1));
+
+    // Should have automatically promoted b2 and a2 to shared pointers
+    lua_getglobal(lua, "b2");
+    ASSERT_EQ(base.val, toCValue<const std::shared_ptr<TestClass> &>(lua, -1)->val);
+    lua_getglobal(lua, "a2");
+    ASSERT_EQ(sub.otherval, toCValue<const std::shared_ptr<TestSubClass> &>(lua, -1)->otherval);
+    
+    lua_getglobal(lua, "b3");
+    ASSERT_EQ(baseshared, toCValue<const std::shared_ptr<TestClass> &>(lua, -1));
 }

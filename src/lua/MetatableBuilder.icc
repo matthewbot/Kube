@@ -122,6 +122,19 @@ MetatableBuilder<T> &MetatableBuilder<T>::function_ref(const std::string &name,
     return *this;
 }
 
+template <typename T> template <typename U>
+MetatableBuilder<T> &MetatableBuilder<T>::downCast(const std::string &name) {
+    LuaStackFrame frame{L};
+    lua_getglobal(L, clsname.c_str());
+
+    lua_pushcclosure(L, [](lua_State *L) -> int {
+        castCValue<T, U>(L, 1);
+        return 1;
+    }, 0);
+    lua_setfield(L, frame+1, name.c_str());
+    return *this;
+}
+
 template <typename T> template <typename V>
 MetatableBuilder<T> &MetatableBuilder<T>::getter(const std::string &name, V T::*mem) {
     LuaStackFrame frame{L};

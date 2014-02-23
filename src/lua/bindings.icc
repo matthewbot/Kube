@@ -345,6 +345,16 @@ std::tuple<Ts...> toCValues(lua_State *L, int narg) {
     return detail::toCValuesHelper<Ts...>(L, narg, Seq());
 }
 
+template <typename T, typename U>
+void castCValue(lua_State *L, int index) {
+    auto wrapptr = PointerWrapper<T>::to(L, index);
+    if (!wrapptr) {
+        detail::throwException<T>(index);
+    }
+
+    wrapptr->template pushStaticCast<U>(L);
+}
+
 namespace detail {
     template <typename T>
     struct ArgsToCValues {

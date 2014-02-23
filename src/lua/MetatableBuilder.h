@@ -4,6 +4,7 @@
 #include <lua.hpp>
 #include <string>
 
+// TODO naming convention
 template <typename T>
 class MetatableBuilder {
 public:
@@ -20,6 +21,9 @@ public:
 
     template <typename Ret, typename... Args>
     MetatableBuilder<T> &function_ref(const std::string &name, Ret (T::*func)(Args...));
+
+    template <typename U>
+    MetatableBuilder<T> &downCast(const std::string &name);
     
     template <typename V>
     MetatableBuilder<T> &getter(const std::string &name, V T::*mem);
@@ -46,7 +50,7 @@ public:
     MetatableBuilder<T> &index();
 
     MetatableBuilder<T> &op_equals();
-    
+
 private:
     lua_State *L;
     std::string clsname;

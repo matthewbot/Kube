@@ -27,6 +27,9 @@ public:
     template <typename TPtr>
     TPtr *getPtr();
 
+    template <typename U>
+    void pushStaticCast(lua_State *L);
+    
     static const std::string &getMetatableName();
     
 private:

@@ -45,6 +45,9 @@ T toCValue(lua_State *L, int index);
 template <typename... Ts>
 std::tuple<Ts...> toCValues(lua_State *L, int narg);
 
+template <typename T, typename U>
+void castCValue(lua_State *L, int index);
+
 template <typename... Args, typename Callable>
 auto invokeWithLuaArgs(lua_State *L, int narg, Callable &&call) ->
     typename std::result_of<Callable(Args...)>::type;
