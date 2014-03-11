@@ -22,6 +22,7 @@ public:
     template <typename Ret, typename... Args>
     MetatableBuilder<T> &function_ref(const std::string &name, Ret (T::*func)(Args...));
 
+    // TODO, should be called staticCast
     template <typename U>
     MetatableBuilder<T> &downCast(const std::string &name);
     

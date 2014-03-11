@@ -104,25 +104,40 @@ static void buildMetaTables(Lua &lua) {
     MetatableBuilder<FaceMap<unsigned int>>(lua, "FaceMapUInt")
         .index<Face, unsigned int>()
         .function("fill", &FaceMap<unsigned int>::fill);
+
+    MetatableBuilder<FaceMap<std::string>>(lua, "FaceMapString")
+        .index<Face, std::string>()
+        .function("fill", &FaceMap<std::string>::fill);
     
     MetatableBuilder<BlockTypeInfo>(lua, "BlockTypeInfo")
         .constructor("new")
         .field("solid", &BlockTypeInfo::solid);
-     
+
+    MetatableBuilder<const BlockType>(lua, "ConstBlockType")
+//        .field("solid", &BlockType::solid) // TODO, base class fields?
+        .getter("id", &BlockType::id)
+        .getter("name", &BlockType::name);
+    
     MetatableBuilder<BlockTypeRegistry>(lua, "BlockTypeRegistry")
-        .function("makeType", &BlockTypeRegistry::makeType);
+        .function_ref("makeType", &BlockTypeRegistry::makeType);
+
+    MetatableBuilder<BlockVisualInfo>(lua, "BlockVisualInfo");
+    
+    MetatableBuilder<SimpleBlockVisualInfo>(lua, "SimpleBlockVisualInfo")
+        .constructor("new")
+        .constructor<std::string>("newFromFilename")
+        .field_ref("face_tex_filenames", &SimpleBlockVisualInfo::face_tex_filenames)
+        .downCast<BlockVisualInfo>("toBlockVisualInfo");
+
+    MetatableBuilder<const BlockVisual>(lua, "ConstBlockVisual");
+    
+    MetatableBuilder<BlockVisualRegistry>(lua, "BlockVisualRegistry")
+        .function_ref("makeVisual", &BlockVisualRegistry::makeVisual);
 }
 
-static std::unique_ptr<View> buildWorldView(ThreadManager &tm, World &world) {
-    BlockVisualRegistry blockvisuals{16};
-    blockvisuals.makeVisual(1, SimpleBlockVisualInfo{"stone.png"});
-    blockvisuals.makeVisual(2, SimpleBlockVisualInfo{"dirt.png"});
-
-    SimpleBlockVisualInfo grassinfo{"grass_side.png"};
-    grassinfo.face_tex_filenames[Face::TOP] = "grass.png";
-    grassinfo.face_tex_filenames[Face::BOTTOM] = "dirt.png";
-    blockvisuals.makeVisual(3, grassinfo);
-    
+static std::unique_ptr<View> buildWorldView(ThreadManager &tm,
+                                            World &world,
+                                            BlockVisualRegistry &blockvisuals) {
     Sampler sampler;
     sampler.setFilter(Sampler::NEAREST);
 
@@ -160,10 +175,11 @@ int main(int argc, char **argv) {
     });
 
     BlockTypeRegistry blocktypes;
+    BlockVisualRegistry blockvisuals{16};
     
     tm.postWork([&](WorkerThread &th) {
         auto &lua = th.cacheLocal<Lua>("lua");
-        lua.call<void>("register_blocktypes", std::ref(blocktypes));
+        lua.call<void>("register_blocktypes", std::ref(blocktypes), std::ref(blockvisuals));
     });
 
     tm.syncWork();
@@ -181,7 +197,7 @@ int main(int argc, char **argv) {
     regenWorld();
 
     GraphicsSystem gfx{tm};
-    gfx.pushView(buildWorldView(tm, world));
+    gfx.pushView(buildWorldView(tm, world, blockvisuals));
     gfx.pushView(buildDebugView());
 
     auto &worldview = gfx.getView<WorldView>(0);

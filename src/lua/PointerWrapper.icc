@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 template <typename T>
 struct IsPointerWrapperType : public std::false_type { };
 
@@ -29,6 +31,9 @@ void PointerWrapper<T>::push(lua_State *L, TPtr &&ptr) {
     void *mem = lua_newuserdata(L, sizeof(PointerWrapper<T>));
     new (mem) PointerWrapper{std::forward<TPtr>(ptr)};
     luaL_getmetatable(L, getMetatableName().c_str());
+    if (lua_isnil(L, -1)) {
+        throw std::runtime_error("No metatable for pushing type");
+    }
     lua_setmetatable(L, -2);
 }
 

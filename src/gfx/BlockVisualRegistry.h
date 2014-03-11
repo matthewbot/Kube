@@ -11,7 +11,7 @@ class BlockVisualRegistry {
 public:
     BlockVisualRegistry(unsigned int block_tex_size);
 
-    const BlockVisual *makeVisual(BlockType::ID id, const BlockVisualInfo &info);
+    const BlockVisual &makeVisual(BlockType::ID id, const BlockVisualInfo &info);
     const BlockVisual *getVisual(BlockType::ID id) const;
     bool hasVisual(BlockType::ID id) const;
     

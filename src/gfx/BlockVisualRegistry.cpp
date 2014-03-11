@@ -4,12 +4,12 @@ BlockVisualRegistry::BlockVisualRegistry(unsigned int block_tex_size) :
     block_tex_builder(block_tex_size, block_tex_size)
 { }
 
-const BlockVisual *BlockVisualRegistry::makeVisual(BlockType::ID id, const BlockVisualInfo &info) {
+const BlockVisual &BlockVisualRegistry::makeVisual(BlockType::ID id, const BlockVisualInfo &info) {
     if (id >= visuals.size()) {
         visuals.resize(id+1);
     }
 
-    return (visuals[id] = info.buildVisual(block_tex_builder)).get();
+    return *(visuals[id] = info.buildVisual(block_tex_builder));
 }
 
 const BlockVisual *BlockVisualRegistry::getVisual(BlockType::ID id) const {
