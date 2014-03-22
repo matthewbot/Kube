@@ -22,4 +22,11 @@ function register_blocktypes(types, visuals)
    grass_vis.face_tex_filenames[4] = "grass.png"
    grass_vis.face_tex_filenames[5] = "dirt.png"
    visuals:makeVisual(grass_id, grass_vis:toBlockVisualInfo())
+
+   local tall_grass = BlockTypeInfo:new()
+   tall_grass.solid = false
+   local tall_grass_id = types:makeType("tall_grass", tall_grass).id
+   local grass_vis = PlantBlockVisualInfo:new()
+   grass_vis.tex_filename = "grass.png"
+   visuals:makeVisual(tall_grass_id, grass_vis:toBlockVisualInfo())
 end

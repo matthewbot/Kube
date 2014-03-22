@@ -16,6 +16,7 @@
 #include "gfx/WorldView.h"
 #include "gfx/DebugView.h"
 #include "gfx/SimpleBlockVisual.h"
+#include "gfx/PlantBlockVisual.h"
 #include <unistd.h>
 #include <iostream>
 #include <tuple>
@@ -53,6 +54,7 @@ public:
         const auto &grass = blocktypes.getType("grass");
         const auto &dirt = blocktypes.getType("dirt");
         const auto &stone = blocktypes.getType("stone");
+        const auto &tall_grass = blocktypes.getType("tall_grass");
 
         std::unique_ptr<Chunk> chunk{new Chunk{blocktypes}};
         chunk->fill(air);
@@ -73,17 +75,21 @@ public:
                 if (solid(pos_above))
                     continue;
 
+                bool has_tall_grass = perlin3(pos_above, seed ^ 0x02) > 0.2f;
+                
                 for (int z=Chunk::ZSize-1; z>=0; z--) {
                     ChunkIndex idx{x, y, z};
                     auto b = chunk->getBlock(idx);
                     if (b.getType() == stone) {
                         if (ctr == 0) {
-                            chunk->setBlock(idx, grass);
+                            chunk->setBlock(idx, has_tall_grass ? tall_grass : grass);
+                        } else if (ctr == 1) {
+                            chunk->setBlock(idx, has_tall_grass ? grass : dirt);
                         } else {
                             chunk->setBlock(idx, dirt);
-                         }
+                        }
 
-                        if (++ctr >= 3) {
+                        if (++ctr >= 4) {
                             break;
                         }
                     }
@@ -127,6 +133,11 @@ static void buildMetaTables(Lua &lua) {
         .constructor("new")
         .constructor<std::string>("newFromFilename")
         .field_ref("face_tex_filenames", &SimpleBlockVisualInfo::face_tex_filenames)
+        .downCast<BlockVisualInfo>("toBlockVisualInfo");
+
+    MetatableBuilder<PlantBlockVisualInfo>(lua, "PlantBlockVisualInfo")
+        .constructor("new")
+        .field("tex_filename", &PlantBlockVisualInfo::tex_filename)
         .downCast<BlockVisualInfo>("toBlockVisualInfo");
 
     MetatableBuilder<const BlockVisual>(lua, "ConstBlockVisual");
