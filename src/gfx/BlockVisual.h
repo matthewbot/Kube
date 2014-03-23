@@ -24,14 +24,20 @@ struct BaseBlockVisualInfo : public BlockVisualInfo {
     }
 };
 
+class BlockVisualRegistry;
+
 class BlockVisual {
 public:
     virtual ~BlockVisual() { }
 
+    // TODO don't give entire chunk, instead give adjacent blocks
+    // and their visuals directly
     virtual void tesselate(MeshBuilder &builder,
+                           const BlockVisualRegistry &visuals,
                            const Chunk &chunk,
                            const ChunkIndex &pos,
                            const Block &block) const = 0;
+    virtual bool isTransparent() const = 0;
 };
 
 #endif

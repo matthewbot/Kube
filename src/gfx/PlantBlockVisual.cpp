@@ -6,6 +6,7 @@ PlantBlockVisual::PlantBlockVisual(const PlantBlockVisualInfo &info,
 }
 
 void PlantBlockVisual::tesselate(MeshBuilder &builder,
+                                 const BlockVisualRegistry &visuals,
                                  const Chunk &chunk,
                                  const ChunkIndex &pos,
                                  const Block &block) const {

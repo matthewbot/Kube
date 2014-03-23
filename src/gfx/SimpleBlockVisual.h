@@ -17,10 +17,12 @@ public:
                       TextureArrayBuilder &block_tex_builder);
 
     virtual void tesselate(MeshBuilder &builder,
+                           const BlockVisualRegistry &visuals,
                            const Chunk &chunk,
                            const ChunkIndex &pos,
                            const Block &block) const;
-    
+
+    virtual bool isTransparent() const { return false; }
 private:
     FaceMap<unsigned int> face_texes;
 };

@@ -15,10 +15,12 @@ public:
                      TextureArrayBuilder &block_tex_builder);
 
     virtual void tesselate(MeshBuilder &builder,
+                           const BlockVisualRegistry &visuals,
                            const Chunk &chunk,
                            const ChunkIndex &pos,
                            const Block &block) const;
-    
+
+    virtual bool isTransparent() const { return true; }
 private:
     unsigned int tex;
 };

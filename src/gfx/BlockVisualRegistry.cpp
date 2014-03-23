@@ -35,7 +35,7 @@ void BlockVisualRegistry::tesselate(MeshBuilder &builder, const Chunk &chunk) co
         auto block = chunk.getBlock(pos);
         auto visualptr = getVisual(block.getType().id);
         if (visualptr) {
-            visualptr->tesselate(builder, chunk, pos, block);
+            visualptr->tesselate(builder, *this, chunk, pos, block);
         }
     }
 }

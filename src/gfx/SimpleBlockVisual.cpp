@@ -1,4 +1,5 @@
 #include "SimpleBlockVisual.h"
+#include "BlockVisualRegistry.h"
 
 SimpleBlockVisual::SimpleBlockVisual(const SimpleBlockVisualInfo &info,
                                      TextureArrayBuilder &block_tex_builder) {
@@ -8,6 +9,7 @@ SimpleBlockVisual::SimpleBlockVisual(const SimpleBlockVisualInfo &info,
 }
 
 void SimpleBlockVisual::tesselate(MeshBuilder &builder,
+                                  const BlockVisualRegistry &visuals,
                                   const Chunk &chunk,
                                   const ChunkIndex &pos,
                                   const Block &block) const {
@@ -23,8 +25,11 @@ void SimpleBlockVisual::tesselate(MeshBuilder &builder,
     for (auto face : all_faces) {
         if (block.getType().solid) {
             auto adjpos = pos.adjacent(face);
-            if (adjpos && chunk.getBlock(adjpos).getType().solid) {
-                continue;
+            if (adjpos) {
+                auto visualptr = visuals.getVisual(chunk.getBlock(adjpos).getType().id);
+                if (visualptr && !visualptr->isTransparent()) {
+                    continue;
+                }
             }
         }
             

@@ -12,6 +12,9 @@ out vec4 outputColor;
 
 void main() {
     vec4 texel = texture(sampler, fragtex);
+    if (texel.a == 0) {
+        discard;
+    }
 
     vec4 fraglight2dist = fraglight2pos - fragpos;
     
