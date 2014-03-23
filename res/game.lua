@@ -27,6 +27,6 @@ function register_blocktypes(types, visuals)
    tall_grass.solid = false
    local tall_grass_id = types:makeType("tall_grass", tall_grass).id
    local grass_vis = PlantBlockVisualInfo:new()
-   grass_vis.tex_filename = "grass.png"
+   grass_vis.tex_filename = "tall_grass.png"
    visuals:makeVisual(tall_grass_id, grass_vis:toBlockVisualInfo())
 end
